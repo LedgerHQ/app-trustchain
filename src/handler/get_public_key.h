@@ -16,10 +16,8 @@
  *
  * @param[in,out] cdata
  *   Command data with BIP32 path.
- * @param[in]     display
- *   Whether to display address on screen or not.
  *
  * @return zero or positive integer if success, negative integer otherwise.
  *
  */
-int handler_get_public_key(buffer_t *cdata, bool display);
+int handler_get_public_key(buffer_t *cdata);

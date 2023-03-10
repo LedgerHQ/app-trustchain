@@ -38,3 +38,9 @@ int helper_send_response_pubkey(void);
  *
  */
 int helper_send_response_sig(void);
+
+
+/**
+ * Helper to send APDU response with signature
+*/
+int helper_send_response_block_signature(void);

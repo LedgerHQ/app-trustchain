@@ -29,6 +29,7 @@
 #include "../handler/get_app_name.h"
 #include "../handler/get_public_key.h"
 #include "../handler/sign_tx.h"
+#include "../handler/sign_block.h"
 
 int apdu_dispatcher(const command_t *cmd) {
     if (cmd->cla != CLA) {
@@ -51,7 +52,7 @@ int apdu_dispatcher(const command_t *cmd) {
 
             return handler_get_app_name();
         case GET_PUBLIC_KEY:
-            if (cmd->p1 > 1 || cmd->p2 > 0) {
+            if (cmd->p1 > 0 || cmd->p2 > 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
 
@@ -63,7 +64,7 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.size = cmd->lc;
             buf.offset = 0;
 
-            return handler_get_public_key(&buf, (bool) cmd->p1);
+            return handler_get_public_key(&buf);
         case SIGN_TX:
             if ((cmd->p1 == P1_START && cmd->p2 != P2_MORE) ||  //
                 cmd->p1 > P1_MAX ||                             //
@@ -80,6 +81,14 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.offset = 0;
 
             return handler_sign_tx(&buf, cmd->p1, (bool) (cmd->p2 & P2_MORE));
+        case SIGN_BLOCK:
+            // If p1 is 0, Block header is expected 
+            // If p1 is 1, A single command is expected
+            // if p1 is 2, the last command is expected (outputs the signature)
+            buf.ptr = cmd->data;
+            buf.size = cmd->lc;
+            buf.offset = 0;
+            return handler_sign_block(&buf, cmd->p1, cmd->p2);
         default:
             return io_send_sw(SW_INS_NOT_SUPPORTED);
     }

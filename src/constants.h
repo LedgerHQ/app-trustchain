@@ -34,3 +34,13 @@
  * Exponent used to convert mBOL to BOL unit (N BOL = N * 10^3 mBOL).
  */
 #define EXPONENT_SMALLEST_UNIT 3
+
+/**
+ * Hash length (bytes).
+ */
+#define HASH_LEN 32
+
+/**
+ * Length of the public key of a member
+*/
+#define MEMBER_KEY_LEN 33

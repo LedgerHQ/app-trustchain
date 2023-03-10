@@ -3,5 +3,14 @@
         "*.h": "c"
     },
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
-    "editor.formatOnSave": false
+    "editor.formatOnSave": false,
+    "C_Cpp.errorSquiggles": "enabled",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/workspaces/ledger-id-concepts/nano-app/build/\"nanos\"/bin",
+            "binaryPath": "/workspaces/ledger-id-concepts/nano-app/build/\"nanos\"/bin/app.elf",
+            "binaryArgs": []
+        }
+    ],
+    "cmake.configureOnOpen": false
 }

@@ -44,3 +44,18 @@
  * Length of the public key of a member
 */
 #define MEMBER_KEY_LEN 33
+
+/**
+ * Max length of a group topic
+*/
+#define MAX_TOPIC_LEN 32
+
+/**
+ * Max length of a member name
+*/
+#define MAX_NAME_LEN 100
+
+/**
+ * Max encrypted key length
+*/
+#define MAX_ENCRYPTED_KEY_LEN 200

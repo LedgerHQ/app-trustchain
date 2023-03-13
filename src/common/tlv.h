@@ -44,6 +44,14 @@ bool tlv_read_next(buffer_t *buffer, tlv_t *tlv);
 
 bool tlv_read_varint_u8(tlv_t *tlv, uint8_t *out);
 
+bool tlv_read_varint_u32(tlv_t *tlv, uint32_t *out);
+
 bool tlv_read_hash(tlv_t *tlv, uint8_t *out);
 
 bool tlv_read_pubkey(tlv_t *tlv, uint8_t *out);
+
+bool tlv_read_bytes(tlv_t *tlv, uint8_t *out, size_t out_size);
+
+bool tlv_read_string(tlv_t *tlv, char *out, size_t out_size);
+
+bool tlv_read_signature(tlv_t *tlv, uint8_t *out, size_t out_size);

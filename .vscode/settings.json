@@ -3,8 +3,7 @@
         "*.h": "c"
     },
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
-    "editor.formatOnSave": false,
-    "C_Cpp.errorSquiggles": "enabled",
+    "editor.formatOnSave": true,
     "makefile.launchConfigurations": [
         {
             "cwd": "/workspaces/ledger-id-concepts/nano-app/build/\"nanos\"/bin",

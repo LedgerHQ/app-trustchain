@@ -8,14 +8,15 @@
             "name": "Nano S",
             "includePath": [
                 "/usr/include",
-                "${workspaceFolder}/src/*",
+                "${workspaceFolder}/src",
                 "${env:BOLOS_SDK}/include/*",
                 "${env:BOLOS_SDK}/lib_ux/include/*",
                 "${env:BOLOS_SDK}/lib_cxng/include/*",
-                "${env:BOLOS_SDK}/lib_stusb/include/*",
+                "${env:BOLOS_SDK}/lib_stusb/*",
                 "${env:BOLOS_SDK}/lib_u2f/include/*",
-                "${env:BOLOS_SDK}/lib_bagl/include/*",
-                "${workspaceFolder}/build/nanos/gen_src/"
+                "${env:BOLOS_SDK}/lib_bagl/*",
+                "${workspaceFolder}/build/nanos/gen_src/",
+                "${workspaceFolder}/src"
             ],
             "defines": [
                 "TARGET_NANOS",
@@ -50,7 +51,8 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
-            "configurationProvider": "ms-vscode.makefile-tools"
+            "configurationProvider": "ms-vscode.makefile-tools",
+            "mergeConfigurations": true
         }
     ],
     "version": 4

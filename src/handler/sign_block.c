@@ -28,7 +28,7 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
     G_context.req_type = CONFIRM_BLOCK;
 
     
-    if (mode == 0) {
+    /*if (mode == 0) {
         // We start hashing
         cx_keccak_init((cx_sha3_t *)&G_context.keccak256, 256);
     }
@@ -50,5 +50,5 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
                 sizeof(G_context.tx_info.m_hash)
         );
         return io_send_response(&(const buffer_t){.ptr = G_context.tx_info.m_hash, .size = 32, .offset = 0}, SW_OK);
-    }
+    }*/
 }

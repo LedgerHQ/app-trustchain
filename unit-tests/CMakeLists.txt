@@ -34,6 +34,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 add_compile_definitions(TEST)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(../src)
 

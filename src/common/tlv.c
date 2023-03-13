@@ -26,6 +26,14 @@ bool tlv_read_varint_u8(tlv_t *tlv, uint8_t *out) {
     return true;
 }
 
+bool tlv_read_varint_u32(tlv_t *tlv, uint32_t *out) {
+    if (tlv->type != TLV_TYPE_VARINT || tlv->length != sizeof(uint32_t)) {
+        return false;
+    }
+    buffer_t buffer = {.ptr = tlv->value, .size = tlv->length, .offset = 0};
+    return buffer_read_u32(&buffer, out, BE);
+}
+
 bool tlv_read_hash(tlv_t *tlv, uint8_t *out) {
     if (tlv->type != TLV_TYPE_HASH || tlv->length != HASH_LEN) {
         return false;
@@ -36,6 +44,31 @@ bool tlv_read_hash(tlv_t *tlv, uint8_t *out) {
 
 bool tlv_read_pubkey(tlv_t *tlv, uint8_t *out) {
     if (tlv->type != TLV_TYPE_PUBKEY || tlv->length != MEMBER_KEY_LEN) {
+        return false;
+    }
+    memcpy(out, tlv->value, tlv->length);
+    return true;
+}
+
+bool tlv_read_bytes(tlv_t *tlv, uint8_t *out, size_t out_size) {
+    if (tlv->type != TLV_TYPE_BYTES || tlv->length > out_size) {
+        return false;
+    }
+    memcpy(out, tlv->value, tlv->length);
+    return true;
+}
+
+bool tlv_read_string(tlv_t *tlv, char *out, size_t out_size) {
+    if (tlv->type != TLV_TYPE_STRING || tlv->length >= out_size) {
+        return false;
+    }
+    memcpy(out, tlv->value, tlv->length);
+    out[tlv->length] = '\0';
+    return true;
+}
+
+bool tlv_read_signature(tlv_t *tlv, uint8_t *out, size_t out_size) {
+    if (tlv->type != TLV_TYPE_SIG || tlv->length > out_size) {
         return false;
     }
     memcpy(out, tlv->value, tlv->length);

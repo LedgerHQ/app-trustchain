@@ -4,7 +4,8 @@
 		"vscode": {
 			"extensions": [
 				"ms-vscode.makefile-tools",
-				"ms-vscode.cpptools"
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools"
 			]
 		}
 	}

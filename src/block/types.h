@@ -1,15 +1,16 @@
 #pragma once
 
-#include <stddef.h>  // size_t
-#include <stdint.h>  // uint*_t
+#include <stddef.h>   // size_t
+#include <stdint.h>   // uint*_t
+#include <stdbool.h>  // bool
 
 #include "../constants.h"
 
 typedef struct {
-    uint8_t version;                // Protocol version of the block
-    uint8_t parent[HASH_LEN];       // Hash of the parent block
-    uint8_t issuer[MEMBER_KEY_LEN]; // Issuer of the block
-    uint8_t length;                 // Number of instruction in the block
+    uint8_t version;                 // Protocol version of the block
+    uint8_t parent[HASH_LEN];        // Hash of the parent block
+    uint8_t issuer[MEMBER_KEY_LEN];  // Issuer of the block
+    uint8_t length;                  // Number of instruction in the block
 } block_header_t;
 
 typedef enum {
@@ -73,11 +74,10 @@ typedef struct {
 typedef struct {
     uint8_t key_size;
     uint8_t key[MAX_ENCRYPTED_KEY_LEN];
+    bool null_version;
     uint8_t version[HASH_LEN];
     uint8_t recipient[MEMBER_KEY_LEN];
 } block_command_publish_key_t;
-
-
 
 typedef struct {
     block_command_type_t type;

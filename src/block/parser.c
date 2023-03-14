@@ -50,7 +50,6 @@ static int parse_encryption_description(tlv_t *data, encryption_description_t *o
 }
 
 static int parse_agreement_description(tlv_t *data, agreement_description_t *out) {
-    tlv_t tlv;
     out->type = data->type;
     switch (data->type) {
         case SECP256K1_AES:
@@ -121,6 +120,30 @@ static int parse_add_member_command(buffer_t *data, block_command_t *out) {
 }
 
 static int parse_publish_key_command(buffer_t *data, block_command_t *out) {
+    tlv_t tlv;
+
+    // Read encrypted key
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.publish_key.key, MAX_ENCRYPTED_KEY_LEN)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    out->command.publish_key.key_size = tlv.length;
+
+    // Read recipient public key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read key version
+    if (!tlv_read_next(data, &tlv)) {
+        return BP_UNEXPECTED_TLV;
+    }
+    out->command.publish_key.null_version = tlv.type == TLV_TYPE_NULL;
+    if (!out->command.publish_key.null_version) {
+        tlv_read_hash(&tlv, out->command.publish_key.version);
+    }
+
     return 0;
 }
 

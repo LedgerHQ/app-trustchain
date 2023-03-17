@@ -23,6 +23,7 @@
 
 #include "types.h"
 #include "globals.h"
+#include "constants.h"
 #include "io.h"
 #include "sw.h"
 #include "ui/menu.h"
@@ -33,6 +34,9 @@ uint8_t G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
 global_ctx_t G_context;
+
+const uint32_t TO_REMOVE_BIP32_PATH[] = {0x80000063, 0x80000063};
+const size_t TO_REMOVE_BIP32_PATH_LEN = 2;
 
 /**
  * Handle APDU command received and send back APDU response using handlers.

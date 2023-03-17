@@ -61,8 +61,35 @@ void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
                             uint8_t raw_public_key[static 64]) {
     // generate corresponding public key
     cx_ecfp_generate_pair(CX_CURVE_256K1, public_key, private_key, 1);
-
     memmove(raw_public_key, public_key->W + 1, 64);
+}
+
+int crypto_compress_public_key(uint8_t *public_key, uint8_t compressed_public_key[static 33]) {
+    // compress public key
+    int error = 0;
+    uint32_t sign;
+
+    // Convert public key to cx_ec_point_t
+    cx_ecpoint_t p;
+
+    BEGIN_TRY {
+        TRY {
+            cx_bn_lock(32, 0);
+            error = cx_ecpoint_alloc(&p, CX_CURVE_SECP256K1);
+            error = cx_ecpoint_init(&p, public_key, 32, public_key + 32, 32);
+            error = cx_ecpoint_compress(&p, compressed_public_key + 1, 32, &sign);
+            compressed_public_key[0] = sign & 1 ? 0x03 : 0x02;
+        }
+        CATCH_OTHER(e) {
+            error = e;
+        }
+        FINALLY {
+            cx_ecpoint_destroy(&p);
+            cx_bn_unlock();
+        }
+    }
+    END_TRY;
+    return error;
 }
 
 int crypto_sign_message(void) {
@@ -103,7 +130,7 @@ int crypto_sign_message(void) {
 
     if (error == 0) {
         G_context.tx_info.signature_len = sig_len;
-        G_context.tx_info.v = (uint8_t)(info & CX_ECCINFO_PARITY_ODD);
+        G_context.tx_info.v = (uint8_t) (info & CX_ECCINFO_PARITY_ODD);
     }
 
     return error;

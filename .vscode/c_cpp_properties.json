@@ -41,6 +41,10 @@
                 "HAVE_PRINTF",
                 "HAVE_HASH",
                 "HAVE_SHA3",
+                "HAVE_ECC",
+                "HAVE_ECC_WEIERSTRASS",
+                "HAVE_SECP256K1_CURVE",
+                "HAVE_SHA256",
                 "PRINTF=screen_printf"
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
@@ -51,7 +55,7 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
-            "configurationProvider": "ms-vscode.makefile-tools",
+            // "configurationProvider": "ms-vscode.makefile-tools",
             "mergeConfigurations": true
         }
     ],

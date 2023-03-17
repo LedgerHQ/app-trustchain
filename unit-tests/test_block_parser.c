@@ -10,10 +10,8 @@
 #include <cmocka.h>
 
 #include "block/types.h"
-#include "block/parser.h"
+#include "block/block_parser.h"
 #include "common/buffer.h"
-
-#include "block/parser.h"
 
 static void hex_to_buffer(const char* hex, buffer_t* buffer) {
     // Transform hex string to uint8_t array

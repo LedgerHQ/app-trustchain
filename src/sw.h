@@ -60,3 +60,11 @@
  * Status word for signature fail.
  */
 #define SW_SIGNATURE_FAIL 0xB008
+/**
+ * Status for fail to parse stream due to inconsistent state.
+ */
+#define SW_STREAM_PARSER_BAD_STATE 0xB009
+/**
+ * Status for fail to parse stream due to invalid format.
+ */
+#define SW_STREAM_PARSER_INVALID_FORMAT 0xB00A

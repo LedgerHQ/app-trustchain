@@ -42,20 +42,30 @@
 
 /**
  * Length of the public key of a member
-*/
+ */
 #define MEMBER_KEY_LEN 33
 
 /**
  * Max length of a group topic
-*/
+ */
 #define MAX_TOPIC_LEN 32
 
 /**
  * Max length of a member name
-*/
+ */
 #define MAX_NAME_LEN 100
 
 /**
  * Max encrypted key length
-*/
+ */
 #define MAX_ENCRYPTED_KEY_LEN 200
+
+/**
+ * Trusted parser nonce length (bytes).
+ */
+#define TRUSTED_PARSER_NONCE_LEN 32
+
+// TODO TO REMOVE instantiated in src/main.c
+
+extern const uint32_t TO_REMOVE_BIP32_PATH[2];
+extern const size_t TO_REMOVE_BIP32_PATH_LEN;

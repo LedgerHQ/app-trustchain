@@ -6,6 +6,10 @@
 
 #include "../constants.h"
 
+#ifdef HAVE_SHA256
+#include "cx.h"
+#endif
+
 typedef struct {
     uint8_t version;                 // Protocol version of the block
     uint8_t parent[HASH_LEN];        // Hash of the parent block
@@ -21,6 +25,8 @@ typedef enum {
     COMMAND_EDIT_MEMBER = 0x14,
     COMMAND_REVOKE_KEY = 0x15,
     COMMAND_MIGRATE_KEY = 0x16,
+
+    COMMAND_NONE = 0xFF
 } block_command_type_t;
 
 typedef enum {
@@ -87,3 +93,11 @@ typedef struct {
         block_command_publish_key_t publish_key;
     } command;
 } block_command_t;
+
+typedef struct {
+#ifdef HAVE_SHA256
+    cx_sha256_t digest;  // Current block digest
+#endif
+    uint8_t issuer_pk[MEMBER_KEY_LEN];  // Issuer public key
+    block_command_t untrusted_command;
+} signer_ctx_t;

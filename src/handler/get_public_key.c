@@ -32,6 +32,7 @@
 #include "../common/buffer.h"
 #include "../ui/display.h"
 #include "../helper/send_response.h"
+#include "../constants.h"
 
 int handler_get_public_key(buffer_t *cdata) {
     explicit_bzero(&G_context, sizeof(G_context));
@@ -41,10 +42,14 @@ int handler_get_public_key(buffer_t *cdata) {
     cx_ecfp_private_key_t private_key = {0};
     cx_ecfp_public_key_t public_key = {0};
 
-    if (!buffer_read_u8(cdata, &G_context.bip32_path_len) ||
-        !buffer_read_bip32_path(cdata, G_context.bip32_path, (size_t) G_context.bip32_path_len)) {
-        return io_send_sw(SW_WRONG_DATA_LENGTH);
-    }
+    // TODO CHANGE THIS
+    // Path should change depending on the topic of the chain
+    // For the PoC always use the same hardcoded path (99'/99')
+    (void) cdata;
+
+    G_context.bip32_path[0] = TO_REMOVE_BIP32_PATH[0];
+    G_context.bip32_path[1] = TO_REMOVE_BIP32_PATH[1];
+    G_context.bip32_path_len = TO_REMOVE_BIP32_PATH_LEN;
 
     // derive private key according to BIP32 path
     int error = crypto_derive_private_key(&private_key,
@@ -56,6 +61,15 @@ int handler_get_public_key(buffer_t *cdata) {
     }
     // generate corresponding public key
     crypto_init_public_key(&private_key, &public_key, G_context.pk_info.raw_public_key);
+
+    // Compress the key
+    error = crypto_compress_public_key(G_context.pk_info.raw_public_key,
+                                       G_context.pk_info.compressed_pk);
+
+    if (error != CX_OK) {
+        return io_send_sw(error);
+    }
+
     // reset private key
     explicit_bzero(&private_key, sizeof(private_key));
 

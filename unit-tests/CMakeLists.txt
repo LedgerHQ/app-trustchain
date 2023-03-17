@@ -60,7 +60,7 @@ add_library(transaction_deserialize ../src/transaction/deserialize.c)
 add_library(transaction_serialize ../src/transaction/serialize.c)
 add_library(transaction_utils ../src/transaction/utils.c)
 add_library(tlv SHARED ../src/common/tlv.c)
-add_library(block_parser ../src/block/parser.c)
+add_library(block_parser ../src/block/block_parser.c)
 
 
 target_link_libraries(test_base58 PUBLIC cmocka gcov base58)

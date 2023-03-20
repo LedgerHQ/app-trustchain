@@ -310,10 +310,33 @@ static void test_stream_parse(void** state) {
     free((void*) buffer.ptr);
 }
 
+static void test_parse_create_group_command(void** state) {
+    (void) state; /* unused */
+
+    const char* command_hex =
+        "102c0520c96d450545ff2836204c29af291428a5bf740304978f5dfb0b4a261474192851400601011801012060"
+        "00";
+
+    buffer_t buffer;
+    hex_to_buffer(command_hex, &buffer);
+
+    block_command_t command;
+    int error = parse_block_command(&buffer, &command);
+    assert_int_equal(error, 0x2e);
+    assert_int_equal(command.type, COMMAND_CREATE_GROUP);
+    assert_int_equal(command.command.create_group.topic_len, 32);
+
+    char topic_hex[65];
+    atohex(command.command.create_group.topic, command.command.create_group.topic_len, topic_hex);
+    assert_string_equal(topic_hex,
+                        "c96d450545ff2836204c29af291428a5bf740304978f5dfb0b4a261474192851");
+}
+
 int main() {
     const struct CMUnitTest tests[] = {cmocka_unit_test(test_block_header_parse),
                                        cmocka_unit_test(test_block_commands_parse),
-                                       cmocka_unit_test(test_stream_parse)};
+                                       cmocka_unit_test(test_stream_parse),
+                                       cmocka_unit_test(test_parse_create_group_command)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -70,6 +70,7 @@ static int parse_create_group_command(buffer_t *data, block_command_t *out) {
     if (tlv.length > MAX_TOPIC_LEN) {
         return BP_OVERSIZED_FIELD;
     }
+    out->command.create_group.topic_len = tlv.length;
     tlv_read_bytes(&tlv, out->command.create_group.topic, MAX_TOPIC_LEN);
 
     // Read encryption description

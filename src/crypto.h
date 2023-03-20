@@ -55,3 +55,14 @@ int crypto_compress_public_key(uint8_t *public_key, uint8_t compressed_public_ke
  *
  */
 int crypto_sign_message(void);
+
+/**
+ * Sign block hash in global context.
+ *
+ * @see G_context.bip32_path, G_context.block_hash,
+ * G_context.block_signature.
+ *
+ * @return 0 on success, error number otherwise.
+ *
+ */
+int crypto_sign_block(void);

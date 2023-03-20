@@ -6,6 +6,7 @@
 typedef enum {
     BS_INVALID_PARENT_HASH = -16,
     BS_INVALID_ISSUER = -17,
+    BS_INVALID_STATE = -18,
 } signer_state_t;
 
 int signer_init(signer_ctx_t *signer, const uint32_t *bip32_path, size_t bip32_path_len);
@@ -32,4 +33,4 @@ int signer_approve_command(stream_ctx_t *stream, buffer_t *trusted_data);
 /**
  * Sign the block
  */
-int signer_sign_block(signer_ctx_t *signer);
+int signer_sign_block(signer_ctx_t *signer, stream_ctx_t *stream);

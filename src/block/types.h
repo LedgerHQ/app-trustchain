@@ -67,6 +67,7 @@ typedef struct {
 
 typedef struct {
     uint8_t topic[MAX_TOPIC_LEN];
+    uint8_t topic_len;
     encryption_description_t encryption;
     agreement_description_t agreement;
 } block_command_create_group_t;
@@ -98,6 +99,9 @@ typedef struct {
 #ifdef HAVE_SHA256
     cx_sha256_t digest;  // Current block digest
 #endif
-    uint8_t issuer_pk[MEMBER_KEY_LEN];  // Issuer public key
-    block_command_t untrusted_command;
+    uint8_t issuer_pk[MEMBER_KEY_LEN];   // Issuer public key
+    uint8_t signature[MAX_DER_SIG_LEN];  /// transaction signature encoded in DER
+    uint8_t signature_len;               /// length of transaction signature
+    uint8_t v;                           /// parity of y-coordinate of R in ECDSA signature
+
 } signer_ctx_t;

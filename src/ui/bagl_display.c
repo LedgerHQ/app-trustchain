@@ -185,4 +185,9 @@ int ui_display_transaction() {
     return 0;
 }
 
+int ui_display_add_member_command(void) {
+    // TODO display proper screen
+    return 0;
+}
+
 #endif

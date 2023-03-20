@@ -135,3 +135,53 @@ int crypto_sign_message(void) {
 
     return error;
 }
+
+int crypto_sign_block(void) {
+    cx_ecfp_private_key_t private_key = {0};
+    uint8_t chain_code[32] = {0};
+    uint32_t info = 0;
+    int sig_len = 0;
+
+    // Derive private key
+
+    // TODO CHANGE DERIVATION
+    G_context.bip32_path[0] = TO_REMOVE_BIP32_PATH[0];
+    G_context.bip32_path[1] = TO_REMOVE_BIP32_PATH[1];
+    G_context.bip32_path_len = TO_REMOVE_BIP32_PATH_LEN;
+
+    int error = crypto_derive_private_key(&private_key,
+                                          chain_code,
+                                          G_context.bip32_path,
+                                          G_context.bip32_path_len);
+    if (error != 0) {
+        return error;
+    }
+
+    // Sign hash of last block
+    BEGIN_TRY {
+        TRY {
+            sig_len = cx_ecdsa_sign(&private_key,
+                                    CX_RND_RFC6979 | CX_LAST,
+                                    CX_SHA256,
+                                    G_context.stream.last_block_hash,
+                                    sizeof(G_context.stream.last_block_hash),
+                                    G_context.signer_info.signature,
+                                    sizeof(G_context.signer_info.signature),
+                                    &info);
+        }
+        CATCH_OTHER(e) {
+            error = e;
+        }
+        FINALLY {
+            explicit_bzero(&private_key, sizeof(private_key));
+        }
+    }
+    END_TRY;
+
+    if (error == 0) {
+        G_context.signer_info.signature_len = sig_len;
+        G_context.signer_info.v = (uint8_t) (info & CX_ECCINFO_PARITY_ODD);
+    }
+
+    return error;
+}

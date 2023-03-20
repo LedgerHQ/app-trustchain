@@ -57,6 +57,8 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
 
     // Digest block header
 
+    cx_hash((cx_hash_t *) &signer->digest, 0, data->ptr, data->size, NULL, 0);
+
     return 0;
 }
 
@@ -69,6 +71,31 @@ int signer_parse_command(signer_ctx_t *signer,
     (void) data;
     (void) trusted_data;
 
+    block_command_t command;
+
+    int err = parse_block_command(data, &command);
+
+    if (err < 0) {
+        return err;
+    }
+
+    if (command.type == COMMAND_CREATE_GROUP) {
+        // Creating a group should not require an approval
+        if (stream->is_created) {
+            return BS_INVALID_STATE;
+        }
+        stream->is_created = true;
+        stream->topic_len = command.command.create_group.topic_len;
+        memcpy(stream->topic,
+               command.command.create_group.topic,
+               command.command.create_group.topic_len);
+    } else {
+        return BP_ERROR_UNKNOWN_COMMAND;
+    }
+
+    // Digest command
+    cx_hash((cx_hash_t *) &signer->digest, 0, data->ptr, data->size, NULL, 0);
+
     return 0;
 }
 
@@ -79,8 +106,17 @@ int signer_approve_command(stream_ctx_t *stream, buffer_t *trusted_data) {
     return 0;
 }
 
-int signer_sign_block(signer_ctx_t *signer) {
+int signer_sign_block(signer_ctx_t *signer, stream_ctx_t *stream) {
     (void) signer;
 
-    return 0;
+    // Finalize hashing and put it in stream last block hash
+    cx_hash((cx_hash_t *) &signer->digest,
+            CX_LAST,
+            NULL,
+            0,
+            stream->last_block_hash,
+            sizeof(stream->last_block_hash));
+
+    // Sign the block
+    return crypto_sign_block();
 }

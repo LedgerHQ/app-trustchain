@@ -48,10 +48,10 @@ int helper_send_response_block_signature() {
     uint8_t resp[1 + MAX_DER_SIG_LEN + 1] = {0};
     size_t offset = 0;
 
-    // resp[offset++] = G_context.block.signature_len;
-    // memmove(resp + offset, G_context.block.signature, G_context.block.signature_len);
-    // offset += G_context.block.signature_len;
-    // resp[offset++] = (uint8_t) G_context.block.v;
+    resp[offset++] = G_context.signer_info.signature_len;
+    memmove(resp + offset, G_context.signer_info.signature, G_context.signer_info.signature_len);
+    offset += G_context.signer_info.signature_len;
+    resp[offset++] = (uint8_t) G_context.signer_info.v;
 
     return io_send_response(&(const buffer_t){.ptr = resp, .size = offset, .offset = 0}, SW_OK);
 }

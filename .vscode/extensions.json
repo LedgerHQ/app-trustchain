@@ -1,0 +1,7 @@
+{
+	"recommendations": [
+        "ms-vscode.cpptools-extension-pack", 
+        "rioj7.command-variable",  
+        "webfreak.debug" 
+	]
+}

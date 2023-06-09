@@ -1,6 +1,7 @@
 #include "tlv.h"
 #include "constants.h"
 #include <string.h>
+#include <stdio.h>
 
 bool tlv_read_next(buffer_t *buffer, tlv_t *tlv) {
     if (!buffer_can_read(buffer, 2)) {
@@ -24,6 +25,14 @@ bool tlv_read_varint_u8(tlv_t *tlv, uint8_t *out) {
     }
     *out = tlv->value[0];
     return true;
+}
+
+bool tlv_read_varint_u16(tlv_t *tlv, uint16_t *out) {
+    if (tlv->type != TLV_TYPE_VARINT || tlv->length != sizeof(uint16_t)) {
+        return false;
+    }
+    buffer_t buffer = {.ptr = tlv->value, .size = tlv->length, .offset = 0};
+    return buffer_read_u16(&buffer, out, BE);
 }
 
 bool tlv_read_varint_u32(tlv_t *tlv, uint32_t *out) {

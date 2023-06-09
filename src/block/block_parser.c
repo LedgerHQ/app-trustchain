@@ -28,40 +28,8 @@ int parse_block_header(buffer_t *data, block_header_t *out) {
     return data->offset - offset;
 }
 
-static int parse_encryption_description(tlv_t *data, encryption_description_t *out) {
+static int parse_seed_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
-    out->type = data->type;
-    buffer_t buffer = {.ptr = data->value, .size = data->length, .offset = 0};
-    switch (data->type) {
-        case XSALSA20POLY305:
-            if (!tlv_read_next(&buffer, &tlv) ||
-                !tlv_read_varint_u8(&tlv, &out->description.xsalsa20poly305.key_size)) {
-                return BP_UNEXPECTED_TLV;
-            }
-            if (!tlv_read_next(&buffer, &tlv) ||
-                !tlv_read_varint_u8(&tlv, &out->description.xsalsa20poly305.nonce_size)) {
-                return BP_UNEXPECTED_TLV;
-            }
-            break;
-        default:
-            return BP_UNKNOWN_ENCRYPTION_DESCRIPTION;
-    }
-    return 0;
-}
-
-static int parse_agreement_description(tlv_t *data, agreement_description_t *out) {
-    out->type = data->type;
-    switch (data->type) {
-        case SECP256K1_AES:
-            return 0;
-        default:
-            return BP_UNKNOWN_AGREEMENT_DESCRIPTION;
-    }
-}
-
-static int parse_create_group_command(buffer_t *data, block_command_t *out) {
-    tlv_t tlv;
-    int status;
 
     // Read the topic
     if (!tlv_read_next(data, &tlv)) {
@@ -70,23 +38,35 @@ static int parse_create_group_command(buffer_t *data, block_command_t *out) {
     if (tlv.length > MAX_TOPIC_LEN) {
         return BP_OVERSIZED_FIELD;
     }
-    out->command.create_group.topic_len = tlv.length;
-    tlv_read_bytes(&tlv, out->command.create_group.topic, MAX_TOPIC_LEN);
+    out->command.seed.topic_len = tlv.length;
+    tlv_read_bytes(&tlv, out->command.seed.topic, MAX_TOPIC_LEN);
 
-    // Read encryption description
-    if (!tlv_read_next(data, &tlv)) {
+    // Read protocol version
+    
+    if (!tlv_read_next(data, &tlv) || !tlv_read_varint_u16(&tlv, &out->command.seed.protocol_version)) {
         return BP_UNEXPECTED_TLV;
     }
-    status = parse_encryption_description(&tlv, &(out->command.create_group.encryption));
-    if (status < 0) {
-        return status;
-    }
-    // Read aggreement description
-    if (!tlv_read_next(data, &tlv)) {
+    
+    // Read group public key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.seed.group_public_key)) {
         return BP_UNEXPECTED_TLV;
     }
-    status = parse_agreement_description(&tlv, &(out->command.create_group.agreement));
-    return status;
+
+    // Read IV
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.seed.initialization_vector, IV_LEN)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read encrypted xpriv
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.seed.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read ephemeral public key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.seed.ephemeral_public_key))
+        return BP_UNEXPECTED_TLV;
+
+    return 0;
 }
 
 static int parse_add_member_command(buffer_t *data, block_command_t *out) {
@@ -123,26 +103,24 @@ static int parse_add_member_command(buffer_t *data, block_command_t *out) {
 static int parse_publish_key_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
 
-    // Read encrypted key
-    if (!tlv_read_next(data, &tlv) ||
-        !tlv_read_bytes(&tlv, out->command.publish_key.key, MAX_ENCRYPTED_KEY_LEN)) {
+    // Read IV
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.publish_key.initialization_vector, IV_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
-    out->command.publish_key.key_size = tlv.length;
-
-    // Read recipient public key
-    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {
+    // Read encrypted xpriv
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.publish_key.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
-    // Read key version
-    if (!tlv_read_next(data, &tlv)) {
+    // Read recipient
+    if (!tlv_read_next(data, &tlv) ||!tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {
         return BP_UNEXPECTED_TLV;
     }
-    out->command.publish_key.null_version = tlv.type == TLV_TYPE_NULL;
-    if (!out->command.publish_key.null_version) {
-        tlv_read_hash(&tlv, out->command.publish_key.version);
+
+    // Read ephemeral public key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.publish_key.ephemeral_public_key)) {
+        return BP_UNEXPECTED_TLV;
     }
 
     return 0;
@@ -161,8 +139,8 @@ int parse_block_command(buffer_t *data, block_command_t *out) {
 
     out->type = tlv.type;
     switch (tlv.type) {
-        case COMMAND_CREATE_GROUP:
-            read = parse_create_group_command(&commandBuffer, out);
+        case COMMAND_SEED:
+            read = parse_seed_command(&commandBuffer, out);
             break;
         case COMMAND_ADD_MEMBER:
             read = parse_add_member_command(&commandBuffer, out);

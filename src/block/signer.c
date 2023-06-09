@@ -79,16 +79,16 @@ int signer_parse_command(signer_ctx_t *signer,
         return err;
     }
 
-    if (command.type == COMMAND_CREATE_GROUP) {
+    if (command.type == COMMAND_SEED) {
         // Creating a group should not require an approval
         if (stream->is_created) {
             return BS_INVALID_STATE;
         }
         stream->is_created = true;
-        stream->topic_len = command.command.create_group.topic_len;
+        stream->topic_len = command.command.seed.topic_len;
         memcpy(stream->topic,
-               command.command.create_group.topic,
-               command.command.create_group.topic_len);
+               command.command.seed.topic,
+               command.command.seed.topic_len);
     } else {
         return BP_ERROR_UNKNOWN_COMMAND;
     }

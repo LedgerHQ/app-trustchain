@@ -65,6 +65,16 @@
  */
 #define TRUSTED_PARSER_NONCE_LEN 32
 
+/**
+ * Length of initialization vectors used for encryption
+*/
+#define IV_LEN 16
+
+/*
+ * Max derivation path length
+*/
+#define MAX_DERIVATION_PATH_LEN 10
+
 // TODO TO REMOVE instantiated in src/main.c
 
 extern const uint32_t TO_REMOVE_BIP32_PATH[2];

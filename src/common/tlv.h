@@ -44,6 +44,8 @@ bool tlv_read_next(buffer_t *buffer, tlv_t *tlv);
 
 bool tlv_read_varint_u8(tlv_t *tlv, uint8_t *out);
 
+bool tlv_read_varint_u16(tlv_t *tlv, uint16_t *out);
+
 bool tlv_read_varint_u32(tlv_t *tlv, uint32_t *out);
 
 bool tlv_read_hash(tlv_t *tlv, uint8_t *out);

@@ -61,9 +61,9 @@
 #define MAX_ENCRYPTED_KEY_LEN 200
 
 /**
- * Trusted parser nonce length (bytes).
+ * Session encryption key length
  */
-#define TRUSTED_PARSER_NONCE_LEN 32
+#define SESSION_ENCRYPTION_KEY_LEN 32
 
 /**
  * Length of initialization vectors used for encryption

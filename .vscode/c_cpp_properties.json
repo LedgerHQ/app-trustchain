@@ -1,7 +1,7 @@
 {
     "env": {
-        "LEDGER_SDK": "/opt/ledger-secure-sdk",
-        "NANOS_SDK":"/opt/nanos-secure-sdk"
+        "LEDGER_SDK": "~/ledger-secure-sdk",
+        "NANOS_SDK":"~/nanos-secure-sdk"
     },
     "configurations": [
         {

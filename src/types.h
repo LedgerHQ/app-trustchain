@@ -4,7 +4,6 @@
 #include <stdint.h>  // uint*_t
 
 #include "constants.h"
-#include "transaction/types.h"
 #include "common/bip32.h"
 
 #include "stream/stream.h"
@@ -31,11 +30,11 @@ typedef enum {
 typedef enum {
     GET_VERSION = 0x03,     /// version of the application
     GET_APP_NAME = 0x04,    /// name of the application
-    GET_PUBLIC_KEY = 0x05,  /// public key of corresponding BIP32 path
-    SIGN_TX = 0x06,         /// sign transaction with BIP32 path
+    GET_PUBLIC_KEY = 0x05,  /// get public key
+    SIGN_INIT = 0x06,       /// Initialize the block signature flow
     SIGN_BLOCK = 0x07,      /// sign block of a parsed stream
     PARSE_STREAM = 0x08,    /// parse a stream
-
+    
 #ifdef ENABLE_DEBUG_COMMANDS
     GET_SECRET = 0xe8,         /// Get the secret symmetric key of a chain
     GET_SHARED_SECRET = 0xe9,  /// Get the shared secret between the device and another member
@@ -81,19 +80,6 @@ typedef struct {
     uint8_t compressed_pk[33];   /// compressed public key
 } pubkey_ctx_t;
 
-/**
- * Structure for transaction information context.
- */
-typedef struct {
-    uint8_t raw_tx[MAX_TRANSACTION_LEN];  /// raw transaction serialized
-    size_t raw_tx_len;                    /// length of raw transaction
-    transaction_t transaction;            /// structured transaction
-    uint8_t m_hash[32];                   /// message hash digest
-    uint8_t signature[MAX_DER_SIG_LEN];   /// transaction signature encoded in DER
-    uint8_t signature_len;                /// length of transaction signature
-    uint8_t v;                            /// parity of y-coordinate of R in ECDSA signature
-} transaction_ctx_t;
-
 #define TRUSTCHAIN_PATH_SIZE 4
 #define NONCE_SIZE           8
 
@@ -104,7 +90,6 @@ typedef struct {
     state_e state;  /// state of the context
     union {
         pubkey_ctx_t pk_info;       /// public key context
-        transaction_ctx_t tx_info;  /// transaction context
         signer_ctx_t signer_info;   /// signer context
     };
     request_type_e req_type;              /// user request

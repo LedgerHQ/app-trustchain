@@ -28,9 +28,9 @@
 #include "../handler/get_version.h"
 #include "../handler/get_app_name.h"
 #include "../handler/get_public_key.h"
-#include "../handler/sign_tx.h"
 #include "../handler/sign_block.h"
 #include "../handler/parse_stream.h"
+#include "../debug.h"
 
 int apdu_dispatcher(const command_t *cmd) {
     if (cmd->cla != CLA) {
@@ -41,10 +41,12 @@ int apdu_dispatcher(const command_t *cmd) {
 
     switch (cmd->ins) {
         case GET_VERSION:
+            DEBUG_PRINT("GET VERSION\n")
             if (cmd->p1 != 0 || cmd->p2 != 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
-
+            uint8_t data[3] = {MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION};
+            DEBUG_PRINT_BUF(data, 3);
             return handler_get_version();
         case GET_APP_NAME:
             if (cmd->p1 != 0 || cmd->p2 != 0) {
@@ -53,6 +55,7 @@ int apdu_dispatcher(const command_t *cmd) {
 
             return handler_get_app_name();
         case GET_PUBLIC_KEY:
+
             if (cmd->p1 > 0 || cmd->p2 > 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
@@ -66,22 +69,16 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.offset = 0;
 
             return handler_get_public_key(&buf);
-        case SIGN_TX:
-            if ((cmd->p1 == P1_START && cmd->p2 != P2_MORE) ||  //
-                cmd->p1 > P1_MAX ||                             //
-                (cmd->p2 != P2_LAST && cmd->p2 != P2_MORE)) {
-                return io_send_sw(SW_WRONG_P1P2);
-            }
-
-            if (!cmd->data) {
-                return io_send_sw(SW_WRONG_DATA_LENGTH);
-            }
-
-            buf.ptr = cmd->data;
-            buf.size = cmd->lc;
-            buf.offset = 0;
-
-            return handler_sign_tx(&buf, cmd->p1, (bool) (cmd->p2 & P2_MORE));
+        case SIGN_INIT:
+            // Initialize the flow for signing a block. The command receives an ephemeral public
+            // and generate an ephemeral private key and create a secret. The ephemeral public key
+            // will be shared to the host at the end of the flow when the signature is approved by
+            // the user.
+            // P1 is equal to 0x00
+            // P2 is equal to 0x00
+            // Data is equal to the 33 bytes of the ephemeral public key
+ 
+            return handler_init_signature_flow(&buf);
         case SIGN_BLOCK:
             // If p1 is 0, Block header is expected
             // If p1 is 1, A single command is expected

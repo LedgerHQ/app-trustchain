@@ -95,4 +95,6 @@ typedef struct {
     uint8_t signature_len;               /// length of transaction signature
     uint8_t v;                           /// parity of y-coordinate of R in ECDSA signature
 
+    uint8_t session_key[MEMBER_KEY_LEN];  // Session key (ephemeral public key)
+    uint8_t session_encryption_key[SESSION_ENCRYPTION_KEY_LEN];
 } signer_ctx_t;

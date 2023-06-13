@@ -43,7 +43,22 @@ void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
                             cx_ecfp_public_key_t *public_key,
                             uint8_t raw_public_key[static 64]);
 
+/**
+ * Compress public key.
+*/
 int crypto_compress_public_key(uint8_t *public_key, uint8_t compressed_public_key[static 33]);
+
+/**
+ * Decompress public key.
+*/
+int crypto_decompress_public_key(uint8_t *compressed_public_key, uint8_t public_key[static 65]);
+
+/**
+ * Perform ECDH between a private key and a compressed public key.
+*/
+int crypto_ecdh(const cx_ecfp_private_key_t *private_key,
+                const uint8_t *compressed_public_key,
+                uint8_t *secret);
 
 /**
  * Sign message hash in global context.

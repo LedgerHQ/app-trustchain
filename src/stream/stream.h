@@ -20,7 +20,6 @@ typedef enum {
 
 typedef struct {
     // Informations about the state of the stream
-    uint8_t trusted_nonce[TRUSTED_PARSER_NONCE_LEN];  // Nonce used parse and sign the chain
     uint8_t topic[MAX_TOPIC_LEN];                     // Topic of the chain
     uint8_t topic_len;                                // Length of the topic
     uint8_t last_block_hash[HASH_LEN];                // Hash of the last block of the chain

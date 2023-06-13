@@ -7,7 +7,7 @@ void stream_init(stream_ctx_t *ctx) {
     memset(ctx, 0, sizeof(stream_ctx_t));
 
     // Trusted nonce will be used to sign trusted params
-    cx_trng_get_random_data(ctx->trusted_nonce, sizeof(ctx->trusted_nonce));
+    //cx_trng_get_random_data(ctx->trusted_nonce, sizeof(ctx->trusted_nonce));
 
     // Expect the next item to be a block header
     ctx->parsing_state = STREAM_PARSING_STATE_BLOCK_HEADER;

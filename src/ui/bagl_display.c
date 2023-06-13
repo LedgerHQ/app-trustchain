@@ -32,9 +32,7 @@
 #include "../globals.h"
 #include "../io.h"
 #include "../sw.h"
-#include "../address.h"
 #include "action/validate.h"
-#include "../transaction/types.h"
 #include "../common/bip32.h"
 #include "../common/format.h"
 #include "../menu.h"
@@ -117,11 +115,11 @@ int ui_display_address() {
     }
 
     memset(g_address, 0, sizeof(g_address));
-    uint8_t address[ADDRESS_LEN] = {0};
-    if (!address_from_pubkey(G_context.pk_info.raw_public_key, address, sizeof(address))) {
-        return io_send_sw(SW_DISPLAY_ADDRESS_FAIL);
-    }
-    snprintf(g_address, sizeof(g_address), "0x%.*H", sizeof(address), address);
+    //uint8_t address[ADDRESS_LEN] = {0};
+    // if (!address_from_pubkey(G_context.pk_info.raw_public_key, address, sizeof(address))) {
+    //     return io_send_sw(SW_DISPLAY_ADDRESS_FAIL);
+    // }
+    //snprintf(g_address, sizeof(g_address), "0x%.*H", sizeof(address), address);
 
     g_validate_callback = &ui_action_validate_pubkey;
 
@@ -168,7 +166,7 @@ int ui_display_transaction() {
     char amount[30] = {0};
     if (!format_fpu64(amount,
                       sizeof(amount),
-                      G_context.tx_info.transaction.value,
+                      10,
                       EXPONENT_SMALLEST_UNIT)) {
         return io_send_sw(SW_DISPLAY_AMOUNT_FAIL);
     }
@@ -176,7 +174,7 @@ int ui_display_transaction() {
     PRINTF("Amount: %s\n", g_amount);
 
     memset(g_address, 0, sizeof(g_address));
-    snprintf(g_address, sizeof(g_address), "0x%.*H", ADDRESS_LEN, G_context.tx_info.transaction.to);
+    //snprintf(g_address, sizeof(g_address), "0x%.*H", ADDRESS_LEN, G_context.tx_info.transaction.to);
 
     g_validate_callback = &ui_action_validate_transaction;
 

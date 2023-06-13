@@ -112,6 +112,7 @@ static int parse_publish_key_command(buffer_t *data, block_command_t *out) {
     if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.publish_key.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
+    out->command.publish_key.encrypted_xpriv_size = tlv.length;
 
     // Read recipient
     if (!tlv_read_next(data, &tlv) ||!tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {

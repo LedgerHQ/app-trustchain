@@ -71,6 +71,7 @@ typedef struct {
 typedef struct {
     uint8_t     initialization_vector[IV_LEN];
     uint8_t     encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
+    uint8_t     encrypted_xpriv_size;
     uint8_t     recipient[MEMBER_KEY_LEN];
     uint8_t     ephemeral_public_key[MEMBER_KEY_LEN];
 } block_command_publish_key_t;

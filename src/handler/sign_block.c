@@ -27,6 +27,10 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode) {
         return io_send_sw(SW_BAD_STATE);
     }
     if (mode == MODE_BLOCK_START) {
+         if (!IS_SESSION_INITIALIAZED()) {
+            signer_reset();
+            return io_send_sw(SW_BAD_STATE);
+        }
         // Initialize the signer
         error = signer_init(&G_context.signer_info, SEED_ID_PATH, SEED_ID_PATH_LEN);
         if (error != 0) {
@@ -45,17 +49,23 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode) {
         return io_send_trusted_property(SW_OK);
 
     } else if (mode == MODE_COMMAND_PARSE) {
+        if (!IS_SESSION_INITIALIAZED()) {
+            signer_reset();
+            return io_send_sw(SW_BAD_STATE);
+        }
         error = signer_parse_command(&G_context.signer_info, &G_context.stream, cdata);
         if (error != 0) {
             return io_send_sw(SW_BAD_STATE);
         }
         return io_send_trusted_property(SW_OK);
     } else if (mode == MODE_BLOCK_FINALIZE) { 
+         if (!IS_SESSION_INITIALIAZED()) {
+            signer_reset();
+            return io_send_sw(SW_BAD_STATE);
+        }
         error = signer_sign_block(&G_context.signer_info, &G_context.stream);
         if (error != 0) {
-            explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
-            explicit_bzero(&G_context.stream, sizeof(G_context.stream));
-            return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
+            return io_send_sw(SW_BAD_STATE);
         }
         error = helper_send_response_block_signature();
         // Reset the context

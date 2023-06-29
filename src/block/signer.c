@@ -52,6 +52,10 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
     if (!err) {
         return err;
     }
+    if (block_header.length == 0) {
+        signer_reset();
+        return BS_EMPTY_BLOCK;
+    }
 
     // Verify the parent is set to the current block hash (if stream is created)
 
@@ -61,6 +65,9 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
 
     // Set the block issuer
     memcpy(block_header.issuer, signer->issuer_public_key, MEMBER_KEY_LEN);
+
+    // Set block count in the signer
+    signer->command_count = block_header.length;
 
     // Digest block header
     block_hash_header(&block_header, (cx_hash_t *) &signer->digest);
@@ -160,9 +167,15 @@ int signer_parse_command(signer_ctx_t *signer,
                          buffer_t *data) {
     block_command_t command;
 
+    if (signer->command_count <= SIGNER_EMPTY_BLOCK) {
+        signer_reset();
+        return BS_EMPTY_BLOCK;
+    }
+
     int err = parse_block_command(data, &command);
 
     if (err < 0) {
+        signer_reset();
         return err;
     }
 
@@ -184,14 +197,14 @@ int signer_parse_command(signer_ctx_t *signer,
     }
     
     if (err != 0) {
-        explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
-        explicit_bzero(&G_context.stream, sizeof(G_context.stream));
+        signer_reset();
         return err;
     }
 
     // Digest command
-    //cx_sha256_init(&signer->digest);
     block_hash_command(&command, (cx_hash_t *) &signer->digest);
+
+    signer->parsed_command += 1;
     return 0;
 }
 
@@ -205,6 +218,16 @@ int signer_approve_command(stream_ctx_t *stream, buffer_t *trusted_data) {
 int signer_sign_block(signer_ctx_t *signer, stream_ctx_t *stream) {
     // Finalize hashing and put it in stream last block hash
     
+    if (signer->command_count <= SIGNER_EMPTY_BLOCK) {
+        signer_reset();
+        return BS_EMPTY_BLOCK;
+    }
+
+    if (signer->command_count != signer->parsed_command) {
+        signer_reset();
+        return BS_COMMAND_COUNT_MISMATCH;
+    }
+
     cx_hash((cx_hash_t *) &signer->digest,
             CX_LAST,
             NULL,

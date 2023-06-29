@@ -30,6 +30,7 @@
 #include "../handler/get_public_key.h"
 #include "../handler/sign_block.h"
 #include "../handler/parse_stream.h"
+#include "../handler/init_signature_flow.h"
 #include "../debug.h"
 
 int apdu_dispatcher(const command_t *cmd) {
@@ -41,12 +42,9 @@ int apdu_dispatcher(const command_t *cmd) {
 
     switch (cmd->ins) {
         case GET_VERSION:
-            DEBUG_PRINT("GET VERSION\n")
             if (cmd->p1 != 0 || cmd->p2 != 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
-            uint8_t data[3] = {MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION};
-            DEBUG_PRINT_BUF(data, 3);
             return handler_get_version();
         case GET_APP_NAME:
             if (cmd->p1 != 0 || cmd->p2 != 0) {
@@ -54,8 +52,8 @@ int apdu_dispatcher(const command_t *cmd) {
             }
 
             return handler_get_app_name();
-        case GET_PUBLIC_KEY:
-
+        case GET_SEED_ID:
+            DEBUG_PRINT("OK 1\n");
             if (cmd->p1 > 0 || cmd->p2 > 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
@@ -67,25 +65,37 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.ptr = cmd->data;
             buf.size = cmd->lc;
             buf.offset = 0;
-
             return handler_get_public_key(&buf);
-        case SIGN_INIT:
-            // Initialize the flow for signing a block. The command receives an ephemeral public
+        case INIT:
+            // Initialize the flow for signing a block or accessing the SeedID. The command receives an ephemeral public
             // and generate an ephemeral private key and create a secret. The ephemeral public key
-            // will be shared to the host at the end of the flow when the signature is approved by
+            // will be shared to the host at the end of the flow when it is approved by
             // the user.
             // P1 is equal to 0x00
             // P2 is equal to 0x00
             // Data is equal to the 33 bytes of the ephemeral public key
- 
+            if (cmd->lc != 33) {
+                return io_send_sw(SW_WRONG_DATA_LENGTH);
+            }
+
+            buf.ptr = cmd->data;
+            buf.size = cmd->lc;
+            buf.offset = 0;
+
             return handler_init_signature_flow(&buf);
         case SIGN_BLOCK:
             // If p1 is 0, Block header is expected
             // If p1 is 1, A single command is expected
             // if p1 is 2, the last command is expected (outputs the signature)
+
+            if (cmd->p1 > MODE_BLOCK_FINALIZE) {
+                return io_send_sw(SW_WRONG_P1P2);
+            }
+
             buf.ptr = cmd->data;
             buf.size = cmd->lc;
             buf.offset = 0;
+
             return handler_sign_block(&buf, cmd->p1, cmd->p2);
         case PARSE_STREAM:
             // This command is used to give context to the app before

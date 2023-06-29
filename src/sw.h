@@ -68,3 +68,8 @@
  * Status for fail to parse stream due to invalid format.
  */
 #define SW_STREAM_PARSER_INVALID_FORMAT 0xB00A
+
+/**
+ * Status for buffer overflow (for trusted property).
+ */
+#define SW_TP_BUFFER_OVERFLOW 0xB00B

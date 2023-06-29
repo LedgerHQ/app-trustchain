@@ -2,7 +2,7 @@
 
 #ifdef ENABLE_DEBUG
 
-void debug_write(char *buf)
+void debug_write(const char *buf)
 {
   asm volatile (
      "movs r0, #0x04\n"
@@ -12,25 +12,18 @@ void debug_write(char *buf)
   );
 }
 
-void debug_write_hex(uint8_t *buf, uint32_t len)
+void debug_write_hex(const uint8_t *buf, uint32_t len)
 {
-  #define MAX_HEX_LEN 200
-  char hex[MAX_HEX_LEN + 1];
+  char hex[3] = {0, 0, 0};
   const char *hex_chars = "0123456789abcdef";
+  uint32_t offset;
 
-  int offset = 0;
-  for (; offset < len; offset++) {
-    hex[offset * 2] = hex_chars[buf[offset] >> 4];
-    hex[offset * 2 + 1] = hex_chars[buf[offset] & 0x0f];
+  for (offset = 0; offset < len; offset++) {
+    hex[0] = hex_chars[buf[offset] >> 4];
+    hex[1] = hex_chars[buf[offset] & 0x0f];
+    debug_write(hex);
   }
-  hex[offset * 2] = '\0';
-
-  debug_write(hex);
-  if (len * 2 > MAX_HEX_LEN) {
-    debug_write("...\n");
-  } else {
-    debug_write("\n");
-  }
+  debug_write("\n");
 }
 
 #endif

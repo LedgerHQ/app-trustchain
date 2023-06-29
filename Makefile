@@ -88,7 +88,7 @@ ifneq ($(DEBUG),0)
     ifeq ($(TARGET_NAME),TARGET_NANOS)
         DEFINES += PRINTF=screen_printf
     else
-        DEFINES += PRINTF=mcu_usb_printf
+       DEFINES += PRINTF=mcu_usb_printf
     endif
 else
         DEFINES += PRINTF\(...\)=

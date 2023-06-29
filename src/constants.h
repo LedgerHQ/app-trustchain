@@ -58,7 +58,7 @@
 /**
  * Max encrypted key length
  */
-#define MAX_ENCRYPTED_KEY_LEN 200
+#define MAX_ENCRYPTED_KEY_LEN 64
 
 /**
  * Session encryption key length
@@ -75,7 +75,12 @@
 */
 #define MAX_DERIVATION_PATH_LEN 10
 
+/*
+ * Private key length
+*/
+#define PRIVATE_KEY_LEN 32
+
 // TODO TO REMOVE instantiated in src/main.c
 
-extern const uint32_t TO_REMOVE_BIP32_PATH[2];
-extern const size_t TO_REMOVE_BIP32_PATH_LEN;
+extern const uint32_t SEED_ID_PATH[2];
+extern const size_t SEED_ID_PATH_LEN;

@@ -33,6 +33,11 @@ static int handler_parse_signature(buffer_t *data) {
 int handler_parse_stream(buffer_t *cdata,
                          parse_stream_mode_t parse_mode,
                          parse_stream_output_mode_t output_mode) {
+    // If secure flow was not initialized return an error
+    if (G_context.signer_info.session_key[0] == 0) {
+        return io_send_sw(SW_BAD_STATE);
+    }
+
     // If parse_mode is set to empty stream reset the context and output success
     if (parse_mode == MODE_PARSE_EMPTY_STREAM) {
         stream_init(&G_context.stream);

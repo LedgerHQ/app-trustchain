@@ -1,7 +1,7 @@
 {
     "env": {
         "LEDGER_SDK": "~/ledger-secure-sdk",
-        "NANOS_SDK":"~/nanos-secure-sdk"
+        "NANOS_SDK": "~/nanos-secure-sdk"
     },
     "configurations": [
         {
@@ -12,10 +12,12 @@
                 "${workspaceFolder}/src/**",
                 "${env:NANOS_SDK}/**"
             ],
-            "forcedInclude": ["${workspaceFolder}/.vscode/bolos_config.h"],
+            "forcedInclude": [
+                "${workspaceFolder}/.vscode/bolos_config.h"
+            ],
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "compilerPath": "/usr/bin/gcc",
             "intelliSenseMode": "gcc-arm",
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
@@ -31,7 +33,9 @@
                 "${env:LEDGER_SDK}/target/nanos2/include/*",
                 "${env:LEDGER_SDK}/**"
             ],
-            "forcedInclude": ["${workspaceFolder}/.vscode/bolos_config.h"],
+            "forcedInclude": [
+                "${workspaceFolder}/.vscode/bolos_config.h"
+            ],
             "cStandard": "c11",
             "cppStandard": "c++17",
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
@@ -50,7 +54,9 @@
                 "${env:LEDGER_SDK}/target/nanox/include/*",
                 "${env:LEDGER_SDK}/**"
             ],
-            "forcedInclude": ["${workspaceFolder}/.vscode/bolos_config.h"],
+            "forcedInclude": [
+                "${workspaceFolder}/.vscode/bolos_config.h"
+            ],
             "cStandard": "c11",
             "cppStandard": "c++17",
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
@@ -69,7 +75,9 @@
                 "${env:LEDGER_SDK}/**",
                 "${workspaceFolder}/build/stax/gen_src/*"
             ],
-            "forcedInclude": ["${workspaceFolder}/.vscode/bolos_config.h"],
+            "forcedInclude": [
+                "${workspaceFolder}/.vscode/bolos_config.h"
+            ],
             "cStandard": "c11",
             "cppStandard": "c++17",
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",

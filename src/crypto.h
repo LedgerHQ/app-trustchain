@@ -46,12 +46,12 @@ void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
 /**
  * Compress public key.
 */
-int crypto_compress_public_key(uint8_t *public_key, uint8_t compressed_public_key[static 33]);
+int crypto_compress_public_key(const uint8_t *public_key, uint8_t compressed_public_key[static 33]);
 
 /**
  * Decompress public key.
 */
-int crypto_decompress_public_key(uint8_t *compressed_public_key, uint8_t public_key[static 65]);
+int crypto_decompress_public_key(const uint8_t *compressed_public_key, uint8_t public_key[static 65]);
 
 /**
  * Perform ECDH between a private key and a compressed public key.
@@ -59,6 +59,15 @@ int crypto_decompress_public_key(uint8_t *compressed_public_key, uint8_t public_
 int crypto_ecdh(const cx_ecfp_private_key_t *private_key,
                 const uint8_t *compressed_public_key,
                 uint8_t *secret);
+
+/**
+ * Generate ephemeral key pair and perform ECDH
+ * 
+ * @param[in]  recipient_public_key Compressed public key of the recipient.
+ * @param[out] ephemeral_public_key The ephemeral public key used to compute the shared secret. The buffer must be at least 33 bytes long.
+ * @param[out] secret The shared secret. The buffer must be at least 32 bytes long.
+*/
+int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *ephemeral_public_key, uint8_t *secret);
 
 /**
  * Sign message hash in global context.

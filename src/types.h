@@ -30,8 +30,8 @@ typedef enum {
 typedef enum {
     GET_VERSION = 0x03,     /// version of the application
     GET_APP_NAME = 0x04,    /// name of the application
-    GET_PUBLIC_KEY = 0x05,  /// get public key
-    SIGN_INIT = 0x06,       /// Initialize the block signature flow
+    GET_SEED_ID = 0x05,  /// get public key
+    INIT = 0x06,            /// Initialize secure flows (block signature, GET SeedID, AUTHENTICATE w/ SeedID)
     SIGN_BLOCK = 0x07,      /// sign block of a parsed stream
     PARSE_STREAM = 0x08,    /// parse a stream
     

@@ -22,8 +22,7 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
  */
 int signer_parse_command(signer_ctx_t *signer,
                          stream_ctx_t *stream,
-                         buffer_t *data,
-                         buffer_t *trusted_data);
+                         buffer_t *data);
 
 /**
  * Approve the last command with a trusted params previously computed

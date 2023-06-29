@@ -90,7 +90,7 @@ typedef struct {
 #ifdef HAVE_SHA256
     cx_sha256_t digest;  // Current block digest
 #endif
-    uint8_t issuer_pk[MEMBER_KEY_LEN];   // Issuer public key
+    uint8_t issuer_public_key[MEMBER_KEY_LEN];   // Issuer public key
     uint8_t signature[MAX_DER_SIG_LEN];  /// transaction signature encoded in DER
     uint8_t signature_len;               /// length of transaction signature
     uint8_t v;                           /// parity of y-coordinate of R in ECDSA signature

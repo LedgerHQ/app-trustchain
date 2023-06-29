@@ -7,4 +7,4 @@ fi
 
 source macos/.env
 
-docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder make
+docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder make

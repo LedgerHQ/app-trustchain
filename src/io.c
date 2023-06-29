@@ -31,6 +31,9 @@
 #include "sw.h"
 #include "common/buffer.h"
 #include "common/write.h"
+#include "debug.h"
+
+#include "trusted_properties.h"
 
 #ifdef HAVE_BAGL
 void io_seproxyhal_display(const bagl_element_t *element) {
@@ -119,6 +122,7 @@ static io_state_e G_io_state = READY;
 void io_init() {
     // Reset length of APDU response
     G_output_len = 0;
+    DEBUG_PRINT("STATE[A] = READY\n")
     G_io_state = READY;
 }
 
@@ -127,15 +131,19 @@ int io_recv_command() {
 
     switch (G_io_state) {
         case READY:
+            DEBUG_PRINT("STATE[B] = RECEIVED\n")
             G_io_state = RECEIVED;
             ret = io_exchange(CHANNEL_APDU, G_output_len);
             break;
         case RECEIVED:
+            DEBUG_PRINT("STATE[C] = WAITING\n")
             G_io_state = WAITING;
             ret = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, G_output_len);
+            DEBUG_PRINT("STATE[D] = RECEIVED\n")
             G_io_state = RECEIVED;
             break;
         case WAITING:
+            DEBUG_PRINT("STATE[E] = READY\n")
             G_io_state = READY;
             ret = -1;
             break;
@@ -146,7 +154,6 @@ int io_recv_command() {
 
 int io_send_response(const buffer_t *rdata, uint16_t sw) {
     int ret = -1;
-
     if (rdata != NULL) {
         if (rdata->size - rdata->offset > IO_APDU_BUFFER_SIZE - 2 ||  //
             !buffer_copy(rdata, G_io_apdu_buffer, sizeof(G_io_apdu_buffer))) {
@@ -167,12 +174,14 @@ int io_send_response(const buffer_t *rdata, uint16_t sw) {
             ret = -1;
             break;
         case RECEIVED:
+            DEBUG_PRINT("STATE[F] = READY\n")
             G_io_state = READY;
             ret = 0;
             break;
         case WAITING:
             ret = io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, G_output_len);
             G_output_len = 0;
+            DEBUG_PRINT("STATE[G] = READY\n")
             G_io_state = READY;
             break;
     }
@@ -182,4 +191,90 @@ int io_send_response(const buffer_t *rdata, uint16_t sw) {
 
 int io_send_sw(uint16_t sw) {
     return io_send_response(NULL, sw);
+}
+
+#define TP_IV_OFFSET 2
+#define TP_IV_LEN 16
+
+void io_init_trusted_property() {
+    G_output_len = 0;
+    // Serialize IV as TLV
+    G_io_apdu_buffer[0] = TP_IV;
+    G_io_apdu_buffer[1] = TP_IV_LEN;
+    // Generate IV
+    cx_trng_get_random_data(G_io_apdu_buffer + 2, TP_IV_LEN);
+
+    G_output_len = TP_IV_LEN + 2;
+}
+
+int io_push_trusted_property(uint8_t property_type, buffer_t *rdata) {
+    int length = 0;
+    uint8_t *io_apdu_buffer = G_io_apdu_buffer + G_output_len;
+
+    int len =    G_output_len + (rdata->size + 16 - (rdata->size % 16) + 2);
+    int lena = rdata->size - rdata->offset;
+    DEBUG_LOG_BUF("TP TO PUSH: ", &rdata->size, sizeof(len)) 
+    DEBUG_LOG_BUF("TP DECR: ", &lena, sizeof(lena))
+    if (G_output_len + (rdata->size + 16 - (rdata->size % 16) + 2) > sizeof(G_io_apdu_buffer)) {
+        io_send_sw(SW_TP_BUFFER_OVERFLOW);
+        return -1;
+    }
+
+    io_apdu_buffer[0] = property_type;
+    G_output_len += 1;
+    DEBUG_PRINT("io_send_trusted_property 2\n")
+    // Initialize AES key
+    cx_aes_key_t key;
+    cx_aes_init_key(G_context.signer_info.session_encryption_key, sizeof(G_context.signer_info.session_encryption_key),
+                    &key);
+    DEBUG_PRINT("io_send_trusted_property 3\n")
+    length += cx_aes_iv(
+        &key, 
+        CX_ENCRYPT | CX_CHAIN_CBC | CX_LAST | CX_PAD_ISO9797M2, 
+        G_io_apdu_buffer + TP_IV_OFFSET,
+        TP_IV_LEN, 
+        rdata->ptr + rdata->offset, 
+        rdata->size - rdata->offset, 
+        io_apdu_buffer + 2, 
+        sizeof(G_io_apdu_buffer) - G_output_len
+    );
+    DEBUG_LOG_BUF("TP REAL: ", &length, sizeof(length))
+
+    // Write length
+    io_apdu_buffer[1] = length;
+    G_output_len += length + 1;
+    return 0;
+}
+
+int io_send_trusted_property(uint16_t sw) {
+    int ret = -1;
+    // Write SW
+    if (sw == SW_OK) {
+        write_u16_be(G_io_apdu_buffer, G_output_len, sw);
+        G_output_len += 2;
+    } else {
+        write_u16_be(G_io_apdu_buffer, 0, sw);
+        G_output_len = 2;
+    }
+    switch (G_io_state) {
+        case READY:
+            DEBUG_PRINT("READY\n")
+            ret = -1;
+            break;
+        case RECEIVED:
+            DEBUG_PRINT("RECEIVED\n")
+            DEBUG_PRINT("STATE[H] = READY\n")
+            G_io_state = READY;
+            ret = 0;
+            break;
+        case WAITING:
+            DEBUG_PRINT("WAITING\n")
+            ret = io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, G_output_len);
+            G_output_len = 0;
+            DEBUG_PRINT("STATE[I] = READY\n")
+            G_io_state = READY;
+            break;
+    }
+    DEBUG_PRINT("io_send_trusted_property 6\n")
+    return ret;
 }

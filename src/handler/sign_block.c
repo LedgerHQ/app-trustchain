@@ -15,69 +15,55 @@
 #include "../block/block_parser.h"
 #include "../block/signer.h"
 #include "../helper/send_response.h"
-
+#include "../trusted_properties.h"
 #include "sign_block.h"
+#include "../debug.h"
 
 int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
-    (void) cdata;
-    (void) mode;
-    (void) more;
     int error;
-    G_context.req_type = CONFIRM_BLOCK;
 
+    if (G_context.req_type != CONFIRM_BLOCK) {
+        return io_send_sw(SW_BAD_STATE);
+    }
     if (mode == MODE_BLOCK_START) {
         // Initialize the signer
-        error = signer_init(&G_context.signer_info, TO_REMOVE_BIP32_PATH, TO_REMOVE_BIP32_PATH_LEN);
-
+        error = signer_init(&G_context.signer_info, SEED_ID_PATH, SEED_ID_PATH_LEN);
         if (error != 0) {
             return io_send_sw(SW_BAD_STATE);
         }
-
         // Expects to read a block header (version, issuer, parent...)
         error = signer_parse_block_header(&G_context.signer_info, &G_context.stream, cdata);
 
         if (error != 0) {
             return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
         }
+        // Returns the issuer public key as trusted property
+        buffer_t buffer = {.ptr = G_context.signer_info.issuer_public_key, .size = sizeof(G_context.signer_info.issuer_public_key), .offset = 0};
+        io_init_trusted_property();
+        io_push_trusted_property(TP_ISSUER_PUBLIC_KEY, &buffer);
+        return io_send_trusted_property(SW_OK);
 
     } else if (mode == MODE_COMMAND_PARSE) {
-        error = signer_parse_command(&G_context.signer_info, &G_context.stream, cdata, NULL);
+        DEBUG_PRINT("SIGN BLOCK >> MODE_COMMAND_PARSE\n"); 
+        error = signer_parse_command(&G_context.signer_info, &G_context.stream, cdata);
         if (error != 0) {
-            return io_send_sw(error);
+            return io_send_sw(SW_BAD_STATE);
         }
+        return io_send_trusted_property(SW_OK);
     } else if (mode == MODE_BLOCK_FINALIZE) {
+         DEBUG_PRINT("SIGN BLOCK >> MODE_BLOCK_FINALIZE\n"); 
         error = signer_sign_block(&G_context.signer_info, &G_context.stream);
         if (error != 0) {
+            explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
+            explicit_bzero(&G_context.stream, sizeof(G_context.stream));
             return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
         }
-        return helper_send_response_block_signature();
+        error = helper_send_response_block_signature();
+        // Reset the context
+        explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
+        explicit_bzero(&G_context.stream, sizeof(G_context.stream));
+        return error;
     }
 
-    return io_send_sw(SW_OK);
-
-    /*if (mode == 0) {
-        // We start hashing
-        cx_keccak_init((cx_sha3_t *)&G_context.keccak256, 256);
-    }
-    if (mode != 2) {
-        cx_hash((cx_hash_t *)&G_context.keccak256,
-                0,
-                cdata->ptr,
-                cdata->size,
-                NULL,
-                0
-        );
-        return io_send_sw(SW_OK);
-    } else {
-        cx_hash((cx_hash_t *)&G_context.keccak256,
-                CX_LAST,
-                cdata->ptr,
-                cdata->size,
-                G_context.tx_info.m_hash,
-                sizeof(G_context.tx_info.m_hash)
-        );
-        return io_send_response(&(const buffer_t){.ptr = G_context.tx_info.m_hash, .size = 32,
-    .offset = 0}, SW_OK);
-    }*/
-    // return 0;
+    return io_send_sw(SW_BAD_STATE);
 }

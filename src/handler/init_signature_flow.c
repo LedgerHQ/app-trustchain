@@ -6,8 +6,7 @@
 
 int handler_init_signature_flow(buffer_t *cdata) {
     // Reset the context
-    explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
-    explicit_bzero(&G_context.stream, sizeof(G_context.stream));
+    signer_reset();
 
     // Create session key
     cx_ecfp_private_key_t private_key;

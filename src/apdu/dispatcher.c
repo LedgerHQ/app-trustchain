@@ -53,7 +53,6 @@ int apdu_dispatcher(const command_t *cmd) {
 
             return handler_get_app_name();
         case GET_SEED_ID:
-            DEBUG_PRINT("OK 1\n");
             if (cmd->p1 > 0 || cmd->p2 > 0) {
                 return io_send_sw(SW_WRONG_P1P2);
             }
@@ -61,7 +60,7 @@ int apdu_dispatcher(const command_t *cmd) {
             // if (!cmd->data) {
             //    return io_send_sw(SW_WRONG_DATA_LENGTH);
             //}
-
+            // TODO THIS CALL MUST ASK FOR USER APPROVAL
             buf.ptr = cmd->data;
             buf.size = cmd->lc;
             buf.offset = 0;
@@ -96,7 +95,7 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.size = cmd->lc;
             buf.offset = 0;
 
-            return handler_sign_block(&buf, cmd->p1, cmd->p2);
+            return handler_sign_block(&buf, cmd->p1);
         case PARSE_STREAM:
             // This command is used to give context to the app before
             // making a signature.

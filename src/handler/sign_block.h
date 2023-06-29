@@ -12,4 +12,4 @@
 /**
  * Handler for SIGN_BLOCK command.
 */
-int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more);
+int handler_sign_block(buffer_t *cdata, uint8_t mode);

@@ -39,7 +39,7 @@ int handler_get_public_key(buffer_t *cdata) {
     explicit_bzero(&G_context, sizeof(G_context));
     G_context.req_type = CONFIRM_ADDRESS;
     G_context.state = STATE_NONE;
-    DEBUG_PRINT("handler_get_public_key 1\n");
+
     cx_ecfp_private_key_t private_key = {0};
     cx_ecfp_public_key_t public_key = {0};
 
@@ -51,30 +51,30 @@ int handler_get_public_key(buffer_t *cdata) {
     G_context.bip32_path[0] = SEED_ID_PATH[0];
     G_context.bip32_path[1] = SEED_ID_PATH[1];
     G_context.bip32_path_len = SEED_ID_PATH_LEN;
-    DEBUG_PRINT("handler_get_public_key 2\n");
+
     // derive private key according to BIP32 path
     int error = crypto_derive_private_key(&private_key,
                                           G_context.pk_info.chain_code,
                                           G_context.bip32_path,
                                           G_context.bip32_path_len);
-    DEBUG_PRINT("handler_get_public_key 3\n");
+
     if (error != 0) {
         return io_send_sw(error);
     }
-    DEBUG_PRINT("handler_get_public_key 4\n");
+
     // generate corresponding public key
     crypto_init_public_key(&private_key, &public_key, G_context.pk_info.raw_public_key);
-    DEBUG_PRINT("handler_get_public_key 5\n");
+
     // Compress the key
     error = crypto_compress_public_key(G_context.pk_info.raw_public_key,
                                        G_context.pk_info.compressed_pk);
-    DEBUG_PRINT("handler_get_public_key 6\n");
+
     if (error != CX_OK) {
         return io_send_sw(error);
     }
-    DEBUG_PRINT("handler_get_public_key 7\n");
+
     // reset private key
     explicit_bzero(&private_key, sizeof(private_key));
-    DEBUG_PRINT("handler_get_public_key 8\n");
+
     return helper_send_response_pubkey();
 }

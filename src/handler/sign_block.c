@@ -18,8 +18,9 @@
 #include "../trusted_properties.h"
 #include "sign_block.h"
 #include "../debug.h"
+#include "../block/signer.h"
 
-int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
+int handler_sign_block(buffer_t *cdata, uint8_t mode) {
     int error;
 
     if (G_context.req_type != CONFIRM_BLOCK) {
@@ -44,14 +45,12 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
         return io_send_trusted_property(SW_OK);
 
     } else if (mode == MODE_COMMAND_PARSE) {
-        DEBUG_PRINT("SIGN BLOCK >> MODE_COMMAND_PARSE\n"); 
         error = signer_parse_command(&G_context.signer_info, &G_context.stream, cdata);
         if (error != 0) {
             return io_send_sw(SW_BAD_STATE);
         }
         return io_send_trusted_property(SW_OK);
-    } else if (mode == MODE_BLOCK_FINALIZE) {
-         DEBUG_PRINT("SIGN BLOCK >> MODE_BLOCK_FINALIZE\n"); 
+    } else if (mode == MODE_BLOCK_FINALIZE) { 
         error = signer_sign_block(&G_context.signer_info, &G_context.stream);
         if (error != 0) {
             explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
@@ -60,8 +59,7 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode, bool more) {
         }
         error = helper_send_response_block_signature();
         // Reset the context
-        explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
-        explicit_bzero(&G_context.stream, sizeof(G_context.stream));
+        signer_reset();
         return error;
     }
 

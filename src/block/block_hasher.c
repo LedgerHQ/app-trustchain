@@ -30,7 +30,7 @@ static int write_bytes(const uint8_t *bytes, const uint8_t length, uint8_t *out)
 static void write_command_seed(const block_command_t *command, cx_hash_t *digest) {
     uint8_t buffer[2 + 32 + 16 + 32 + 33 + 2 * 6 + 32 + 64];
     int offset = 0;
-    DEBUG_PRINT("HALLO 1\n")
+    
     // Compute encoded data length
     // Topic(16 max) + ProtocolVersion(2) + GroupKey(32) + IV(16) + EncryptedSeed(32) + EphemeralPublicKey(33) + 2 * NumberOfFields
     uint8_t length = command->command.seed.topic_len + 2 + 32 + 16 + 32 + 33 + 2 * 6;
@@ -45,7 +45,7 @@ static void write_command_seed(const block_command_t *command, cx_hash_t *digest
     // Protocol version
     offset += write_tl(TLV_TYPE_VARINT, 2, buffer + offset);
     offset += write_u16(command->command.seed.protocol_version, buffer + offset);
-    DEBUG_PRINT("HALLO 2\n")
+
     // Group key
     offset += write_tl(TLV_TYPE_PUBKEY, MEMBER_KEY_LEN, buffer + offset);
     offset += write_bytes(command->command.seed.group_public_key, MEMBER_KEY_LEN, buffer + offset);
@@ -63,11 +63,7 @@ static void write_command_seed(const block_command_t *command, cx_hash_t *digest
     offset += write_bytes(command->command.seed.ephemeral_public_key, MEMBER_KEY_LEN, buffer + offset);
     
     buffer[1] = offset - 2; // Set actual length (offset - 2 because offset includes type and length bytes)
-    DEBUG_PRINT("HALLO 3\n")
-    DEBUG_LOG_BUF("OFFSET ", &offset, sizeof(offset));
     cx_hash(digest, 0, buffer, offset, NULL, 0);
-    DEBUG_PRINT("HALLO\n")
-    DEBUG_LOG_BUF("COMMAND HASH: ",buffer, offset);
 }
 
 int block_hash_header(const block_header_t *header, cx_hash_t *digest) {

@@ -122,7 +122,6 @@ static io_state_e G_io_state = READY;
 void io_init() {
     // Reset length of APDU response
     G_output_len = 0;
-    DEBUG_PRINT("STATE[A] = READY\n")
     G_io_state = READY;
 }
 
@@ -131,19 +130,15 @@ int io_recv_command() {
 
     switch (G_io_state) {
         case READY:
-            DEBUG_PRINT("STATE[B] = RECEIVED\n")
             G_io_state = RECEIVED;
             ret = io_exchange(CHANNEL_APDU, G_output_len);
             break;
         case RECEIVED:
-            DEBUG_PRINT("STATE[C] = WAITING\n")
             G_io_state = WAITING;
             ret = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, G_output_len);
-            DEBUG_PRINT("STATE[D] = RECEIVED\n")
             G_io_state = RECEIVED;
             break;
         case WAITING:
-            DEBUG_PRINT("STATE[E] = READY\n")
             G_io_state = READY;
             ret = -1;
             break;
@@ -174,14 +169,12 @@ int io_send_response(const buffer_t *rdata, uint16_t sw) {
             ret = -1;
             break;
         case RECEIVED:
-            DEBUG_PRINT("STATE[F] = READY\n")
             G_io_state = READY;
             ret = 0;
             break;
         case WAITING:
             ret = io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, G_output_len);
             G_output_len = 0;
-            DEBUG_PRINT("STATE[G] = READY\n")
             G_io_state = READY;
             break;
     }
@@ -211,10 +204,6 @@ int io_push_trusted_property(uint8_t property_type, buffer_t *rdata) {
     int length = 0;
     uint8_t *io_apdu_buffer = G_io_apdu_buffer + G_output_len;
 
-    int len =    G_output_len + (rdata->size + 16 - (rdata->size % 16) + 2);
-    int lena = rdata->size - rdata->offset;
-    DEBUG_LOG_BUF("TP TO PUSH: ", &rdata->size, sizeof(len)) 
-    DEBUG_LOG_BUF("TP DECR: ", &lena, sizeof(lena))
     if (G_output_len + (rdata->size + 16 - (rdata->size % 16) + 2) > sizeof(G_io_apdu_buffer)) {
         io_send_sw(SW_TP_BUFFER_OVERFLOW);
         return -1;
@@ -222,12 +211,12 @@ int io_push_trusted_property(uint8_t property_type, buffer_t *rdata) {
 
     io_apdu_buffer[0] = property_type;
     G_output_len += 1;
-    DEBUG_PRINT("io_send_trusted_property 2\n")
+
     // Initialize AES key
     cx_aes_key_t key;
     cx_aes_init_key(G_context.signer_info.session_encryption_key, sizeof(G_context.signer_info.session_encryption_key),
                     &key);
-    DEBUG_PRINT("io_send_trusted_property 3\n")
+
     length += cx_aes_iv(
         &key, 
         CX_ENCRYPT | CX_CHAIN_CBC | CX_LAST | CX_PAD_ISO9797M2, 
@@ -238,7 +227,6 @@ int io_push_trusted_property(uint8_t property_type, buffer_t *rdata) {
         io_apdu_buffer + 2, 
         sizeof(G_io_apdu_buffer) - G_output_len
     );
-    DEBUG_LOG_BUF("TP REAL: ", &length, sizeof(length))
 
     // Write length
     io_apdu_buffer[1] = length;
@@ -258,23 +246,17 @@ int io_send_trusted_property(uint16_t sw) {
     }
     switch (G_io_state) {
         case READY:
-            DEBUG_PRINT("READY\n")
             ret = -1;
             break;
         case RECEIVED:
-            DEBUG_PRINT("RECEIVED\n")
-            DEBUG_PRINT("STATE[H] = READY\n")
             G_io_state = READY;
             ret = 0;
             break;
         case WAITING:
-            DEBUG_PRINT("WAITING\n")
             ret = io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, G_output_len);
             G_output_len = 0;
-            DEBUG_PRINT("STATE[I] = READY\n")
             G_io_state = READY;
             break;
     }
-    DEBUG_PRINT("io_send_trusted_property 6\n")
     return ret;
 }

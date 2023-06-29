@@ -11,6 +11,8 @@ typedef enum {
 
 int signer_init(signer_ctx_t *signer, const uint32_t *bip32_path, size_t bip32_path_len);
 
+void signer_reset();
+
 /**
  * Parse block header and start computing the digest
  */

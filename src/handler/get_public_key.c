@@ -44,8 +44,6 @@ int handler_get_public_key(buffer_t *cdata) {
     cx_ecfp_public_key_t public_key = {0};
 
     // TODO CHANGE THIS
-    // Path should change depending on the topic of the chain
-    // For the PoC always use the same hardcoded path (99'/99')
     (void) cdata;
 
     G_context.bip32_path[0] = SEED_ID_PATH[0];

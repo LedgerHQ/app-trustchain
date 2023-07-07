@@ -194,6 +194,8 @@ int crypto_sign_block(void) {
     if (error != 0) {
         return error;
     }
+    DEBUG_LOG_BUF("PUBLIC KEY (SIGN): ", pk.W, pk.W_len);
+    DEBUG_LOG_BUF("HASH TO SIGN (SIGN): ", G_context.stream.last_block_hash, HASH_LEN);
     // Sign hash of last block
     BEGIN_TRY {
         TRY {
@@ -276,4 +278,143 @@ int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *out_ephe
     // Clean up
     explicit_bzero(&ephemeral_private_key, sizeof(ephemeral_private_key));
     return ret;
+}
+
+int crypto_ecdhe_decrypt(const cx_ecfp_private_key_t *private_key, const uint8_t *sender_public_key, 
+                         const uint8_t *data, uint32_t data_len, uint8_t *initialization_vector,
+                         uint8_t *decrypted_data, uint32_t decrypted_data_len) {
+    uint8_t secret[32];
+    int ret = CX_OK;
+    // Compute secret key
+    ret = crypto_ecdh(private_key, sender_public_key, secret);
+    if (ret != 0) {
+        return ret;
+    }
+
+    // Decrypt
+    ret = crypto_decrypt(secret, sizeof(secret), data, data_len, initialization_vector, decrypted_data, decrypted_data_len, false);
+    return ret;
+}
+
+int crypto_encrypt(const uint8_t *secret, uint32_t secret_len, 
+                   const uint8_t *data, uint32_t data_len, 
+                   uint8_t *initialization_vector, uint8_t *encrypted_data, uint32_t encrypted_data_len, bool padding) {
+    int ret = CX_OK;
+    cx_aes_key_t key;
+
+    ret = cx_aes_init_key(secret, secret_len, &key);
+    if (ret < 0) {
+        return ret;
+    }
+    ret = cx_aes_iv(
+        &key, 
+        CX_ENCRYPT | CX_CHAIN_CBC | CX_LAST | ( padding ? CX_PAD_ISO9797M2 : CX_PAD_NONE), 
+        initialization_vector,
+        C_IV_LEN, 
+        data, 
+        data_len, 
+        encrypted_data, 
+        encrypted_data_len
+    );
+    explicit_bzero(&key, sizeof(key));
+    return ret;
+}
+
+int crypto_decrypt(const uint8_t *secret, uint32_t secret_len, 
+                   const uint8_t *data, uint32_t data_len, 
+                   uint8_t *initialization_vector, uint8_t *decrypted_data, uint32_t decrypted_data_len, bool padding) {
+    int ret = CX_OK;
+    cx_aes_key_t key;
+
+    ret = cx_aes_init_key(secret, secret_len, &key);
+    if (ret < 0) {
+        return ret;
+    }
+    BEGIN_TRY {
+        TRY {
+            ret = cx_aes_iv(
+                &key,
+                CX_DECRYPT | CX_CHAIN_CBC | CX_LAST | (padding ? CX_PAD_ISO9797M2 : CX_PAD_NONE), 
+                initialization_vector,
+                C_IV_LEN, 
+                data, 
+                data_len, 
+                decrypted_data, 
+                decrypted_data_len
+            );
+        }
+        CATCH_OTHER(e) {
+            ret = e;
+        }
+        FINALLY {
+            explicit_bzero(&key, sizeof(key));
+        }
+    } END_TRY;
+    return ret;
+}
+
+int crypto_verify_signature(const uint8_t *public_key,
+                            crypto_hash_t *message_hash,
+                            uint8_t *signature, size_t signature_len) {
+    int ret = CX_OK;
+    cx_ecfp_public_key_t pk;
+    uint8_t raw_public_key[65] = {0};
+    uint8_t digest[HASH_LEN] = {0};
+
+    ret = crypto_decompress_public_key(public_key, raw_public_key);
+    if (ret != CX_OK) {
+        DEBUG_PRINT("Failed to decompress public key\n")
+        return ret;
+    }
+    ret = crypto_digest_finalize(message_hash, digest, sizeof(digest));
+    if (ret != CX_OK) {
+        DEBUG_PRINT("Failed to finalize hash\n")
+        return ret;
+    }
+    DEBUG_LOG_BUF("PUBLIC KEY: ", raw_public_key, sizeof(raw_public_key));
+    DEBUG_LOG_BUF("HASH TO SIGN: ", digest, HASH_LEN);
+    DEBUG_LOG_BUF("SIGNATURE: ", signature, signature_len);
+    cx_ecfp_init_public_key(CX_CURVE_256K1, raw_public_key, sizeof(raw_public_key), &pk);
+    DEBUG_PRINT("Verifying signature\n")
+    return cx_ecdsa_verify_no_throw(&pk, digest, sizeof(digest), signature, signature_len);
+}
+
+int crypto_digest_init(crypto_hash_t *hash) {
+    return cx_sha256_init((cx_sha256_t *) hash);
+}
+
+int crypto_digest_update(crypto_hash_t *hash, const uint8_t *data, uint32_t len) {
+    int ret = CX_OK;
+    BEGIN_TRY {
+        TRY {
+            cx_hash((cx_hash_t *) hash, 0, data, len, NULL, 0);
+        }
+        CATCH_OTHER(e) {
+            ret = e;
+        }
+        FINALLY {
+            
+        }
+    } END_TRY;
+    return ret;
+}
+
+int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len) {
+    int ret = CX_OK;
+    BEGIN_TRY {
+        TRY {
+            cx_hash((cx_hash_t *) hash, CX_LAST, NULL, 0, digest, len);
+        }
+        CATCH_OTHER(e) {
+            ret = e;
+        }
+        FINALLY {
+            
+        }
+    } END_TRY;
+    return ret;
+}
+
+int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len) {
+    return cx_hash_sha256(data, len, digest, digest_len);
 }

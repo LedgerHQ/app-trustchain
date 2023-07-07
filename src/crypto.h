@@ -6,6 +6,10 @@
 #include "os.h"
 #include "cx.h"
 
+#define C_IV_LEN 16
+
+typedef cx_sha256_t crypto_hash_t;
+
 /**
  * Derive private key given BIP32 path.
  *
@@ -70,6 +74,58 @@ int crypto_ecdh(const cx_ecfp_private_key_t *private_key,
 int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *ephemeral_public_key, uint8_t *secret);
 
 /**
+ * Performs an ephemeral ECDH and decrypts the given data.
+ * 
+ * @param[in]  private_key The private key of the recipient.
+ * @param[in]  sender_public_key The public key of the sender.
+ * @param[in]  data The data to decrypt.
+ * @param[in]  data_len The length of the data to decrypt.
+ * @param[in]  initialization_vector The initialization vector used to encrypt the data.
+ * @param[out] decrypted_data The decrypted data. The buffer must be at least data_len bytes long.
+ * @param[in]  decrypted_data_len The length of the decrypted data buffer.
+ * 
+ * @return The length of the decrypted data on success, a negative number in case of error.
+*/
+int crypto_ecdhe_decrypt(const cx_ecfp_private_key_t *private_key, const uint8_t *sender_public_key, 
+                         const uint8_t *data, uint32_t data_len, uint8_t *initialization_vector,
+                         uint8_t *decrypted_data, uint32_t decrypted_data_len);
+
+
+/**
+ * Encrypt data with the given secret and IV
+ * 
+ * @param[in]  secret The secret used to encrypt the data.
+ * @param[in]  secret_len The length of the secret.
+ * @param[in]  data The data to encrypt.
+ * @param[in]  data_len The length of the data to encrypt.
+ * @param[in]  initialization_vector The initialization vector used to encrypt the data.
+ * @param[out] encrypted_data The encrypted data. The buffer must be at least data_len bytes long.
+ * @param[in]  encrypted_data_len The length of the encrypted data buffer.
+ * 
+ * @return The length of the encrypted data on success, a negative number in case of error.
+*/
+int crypto_encrypt(const uint8_t *secret, uint32_t secret_len, 
+                   const uint8_t *data, uint32_t data_len, 
+                   uint8_t *initialization_vector, uint8_t *encrypted_data, uint32_t encrypted_data_len, bool padding);
+
+/**
+ * Decrypt data with the given secret and IV
+ * 
+ * @param[in]  secret The secret used to decrypt the data.
+ * @param[in]  secret_len The length of the secret.
+ * @param[in]  data The data to decrypt.
+ * @param[in]  data_len The length of the data to decrypt.
+ * @param[in]  initialization_vector The initialization vector used to decrypt the data.
+ * @param[out] decrypted_data The decrypted data. The buffer must be at least data_len bytes long.
+ * @param[in]  decrypted_data_len The length of the decrypted data buffer.
+ * 
+ * @return The length of the decrypted data on success, a negative number in case of error.
+*/
+int crypto_decrypt(const uint8_t *secret, uint32_t secret_len, 
+                   const uint8_t *data, uint32_t data_len, 
+                   uint8_t *initialization_vector, uint8_t *decrypted_data, uint32_t decrypted_data_len, bool padding);
+
+/**
  * Sign message hash in global context.
  *
  * @see G_context.bip32_path, G_context.tx_info.m_hash,
@@ -90,3 +146,61 @@ int crypto_sign_message(void);
  *
  */
 int crypto_sign_block(void);
+
+/**
+ * Verify signature of a message hash.
+ * 
+ * @param[in] public_key The public key used to verify the signature.
+ * @param[in] message_hash The message hash to verify.
+ * @param[in] signature The signature to verify.
+ * @param[in] signature_len The length of the signature.
+ * 
+ * @return 1 on success, 0 if the signature doesn't match, error number otherwise.
+*/
+int crypto_verify_signature(const uint8_t *public_key,
+                            crypto_hash_t *message_hash,
+                            uint8_t *signature, size_t signature_len);
+
+
+/**
+ * Initialize the hash structure.
+ * 
+ * @param[out] hash The hash structure to initialize.
+ * 
+ * @return CX_OK on success, error code otherwise.
+*/
+int crypto_digest_init(crypto_hash_t *hash);
+
+/**
+ * Update the hash with the given data.
+ * 
+ * @param[in] hash The hash structure to update.
+ * @param[in] data The data to hash.
+ * @param[in] len The length of the data.
+ * 
+ * @return CX_OK on success, error code otherwise.
+*/
+int crypto_digest_update(crypto_hash_t *hash, const uint8_t *data, uint32_t len);
+
+/**
+ * Finalize the hash and store the digest in the given buffer.
+ * 
+ * @param[in]  hash The hash structure to finalize.
+ * @param[out] digest The buffer to store the digest in.
+ * @param[in]  len The length of the digest buffer.
+ * 
+ * @return CX_OK on success, error code otherwise.
+*/
+int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len);
+
+/**
+ * Compute the digest of the given data (single shot flavour).
+ * 
+ * @param[in]  data The data to hash.
+ * @param[in]  len The length of the data.
+ * @param[out] digest The buffer to store the digest in.
+ * @param[in]  digest_len The length of the digest buffer.
+ * 
+ * @return CX_OK on success, error code otherwise.
+*/
+int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len);

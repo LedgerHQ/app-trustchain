@@ -86,7 +86,7 @@ int apdu_dispatcher(const command_t *cmd) {
             // If p1 is 0, Block header is expected
             // If p1 is 1, A single command is expected
             // if p1 is 2, the last command is expected (outputs the signature)
-
+        
             if (cmd->p1 > MODE_BLOCK_FINALIZE) {
                 return io_send_sw(SW_WRONG_P1P2);
             }

@@ -7,7 +7,7 @@
 #include "../constants.h"
 
 #ifdef HAVE_SHA256
-#include "cx.h"
+#include "../crypto.h"
 #endif
 
 typedef struct {
@@ -21,12 +21,9 @@ typedef enum {
     COMMAND_SEED = 0x10,
     COMMAND_ADD_MEMBER = 0x11,
     COMMAND_PUBLISH_KEY = 0x12,
-    COMMAND_REMOVE_MEMBER = 0x13,
     COMMAND_EDIT_MEMBER = 0x14,
-    COMMAND_REVOKE_KEY = 0x15,
-    COMMAND_MIGRATE_KEY = 0x16,
-
-    COMMAND_NONE = 0xFF
+    COMMAND_DERIVE = 0x15,
+    COMMAND_CLOSE_STREAM = 0x13
 } block_command_type_t;
 
 typedef enum {
@@ -55,6 +52,7 @@ typedef struct {
 
 typedef struct {
     uint32_t    path[MAX_DERIVATION_PATH_LEN];
+    uint8_t     path_len;
     uint8_t     group_public_key[MEMBER_KEY_LEN];
     uint8_t     initialization_vector[IV_LEN];
     uint8_t     encrypted_xpriv_size;
@@ -88,9 +86,8 @@ typedef struct {
 
 typedef struct {
 #ifdef HAVE_SHA256
-    cx_sha256_t digest;  // Current block digest
+    crypto_hash_t digest;  // Current block digest
 #endif
-    uint8_t issuer_public_key[MEMBER_KEY_LEN];   // Issuer public key
     uint8_t signature[MAX_DER_SIG_LEN];  /// transaction signature encoded in DER
     uint8_t signature_len;               /// length of transaction signature
     uint8_t v;                           /// parity of y-coordinate of R in ECDSA signature

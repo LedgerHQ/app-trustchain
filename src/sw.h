@@ -73,3 +73,8 @@
  * Status for buffer overflow (for trusted property).
  */
 #define SW_TP_BUFFER_OVERFLOW 0xB00B
+
+/**
+ * Status for fail when the stream is closed
+*/
+#define SW_STREAM_CLOSED 0xB00C

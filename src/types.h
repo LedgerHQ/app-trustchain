@@ -13,8 +13,6 @@
 #include <cx.h>
 #endif
 
-#define ENABLE_DEBUG_COMMANDS
-
 /**
  * Enumeration for the status of IO.
  */
@@ -30,15 +28,11 @@ typedef enum {
 typedef enum {
     GET_VERSION = 0x03,     /// version of the application
     GET_APP_NAME = 0x04,    /// name of the application
-    GET_SEED_ID = 0x05,  /// get public key
+    GET_SEED_ID = 0x05,     /// get public key NOT IMPLEMENTED
     INIT = 0x06,            /// Initialize secure flows (block signature, GET SeedID, AUTHENTICATE w/ SeedID)
     SIGN_BLOCK = 0x07,      /// sign block of a parsed stream
     PARSE_STREAM = 0x08,    /// parse a stream
-    
-#ifdef ENABLE_DEBUG_COMMANDS
-    GET_SECRET = 0xe8,         /// Get the secret symmetric key of a chain
-    GET_SHARED_SECRET = 0xe9,  /// Get the shared secret between the device and another member
-#endif
+    SET_TRUSTED_MEMBER = 0x09,  /// set a trusted member for upcoming commands
 } command_e;
 
 /**
@@ -81,7 +75,6 @@ typedef struct {
 } pubkey_ctx_t;
 
 #define TRUSTCHAIN_PATH_SIZE 4
-#define NONCE_SIZE           8
 
 /**
  * Structure for global context.

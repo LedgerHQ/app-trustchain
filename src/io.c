@@ -34,6 +34,7 @@
 #include "debug.h"
 
 #include "trusted_properties.h"
+#include "crypto.h"
 
 #ifdef HAVE_BAGL
 void io_seproxyhal_display(const bagl_element_t *element) {
@@ -212,20 +213,16 @@ int io_push_trusted_property(uint8_t property_type, buffer_t *rdata) {
     io_apdu_buffer[0] = property_type;
     G_output_len += 1;
 
-    // Initialize AES key
-    cx_aes_key_t key;
-    cx_aes_init_key(G_context.signer_info.session_encryption_key, sizeof(G_context.signer_info.session_encryption_key),
-                    &key);
-
-    length += cx_aes_iv(
-        &key, 
-        CX_ENCRYPT | CX_CHAIN_CBC | CX_LAST | CX_PAD_ISO9797M2, 
-        G_io_apdu_buffer + TP_IV_OFFSET,
-        TP_IV_LEN, 
+    // Encrypt the data using the session encryption key
+    length = crypto_encrypt(
+        G_context.signer_info.session_encryption_key, 
+        sizeof(G_context.signer_info.session_encryption_key),
         rdata->ptr + rdata->offset, 
         rdata->size - rdata->offset, 
+        G_io_apdu_buffer + TP_IV_OFFSET,  
         io_apdu_buffer + 2, 
-        sizeof(G_io_apdu_buffer) - G_output_len
+        sizeof(G_io_apdu_buffer) - G_output_len,
+        true
     );
 
     // Write length

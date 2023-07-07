@@ -1,35 +1,195 @@
 #include "stream.h"
 #include "cx.h"
 #include <string.h>
+#include "types.h"
+#include "block_parser.h"
+#include "block_hasher.h"
+#include "../crypto.h"
+#include "../debug.h"
 
 void stream_init(stream_ctx_t *ctx) {
-    // Initialize the stream context
-    memset(ctx, 0, sizeof(stream_ctx_t));
-
-    // Trusted nonce will be used to sign trusted params
-    //cx_trng_get_random_data(ctx->trusted_nonce, sizeof(ctx->trusted_nonce));
-
     // Expect the next item to be a block header
     ctx->parsing_state = STREAM_PARSING_STATE_BLOCK_HEADER;
+
+    // Initialize the hash context
+    crypto_digest_init(&ctx->digest);
+    DEBUG_PRINT("INIT STREAM\n")
 }
 
 int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
-    (void) data;
-    (void) ctx;
-    return 0;
+    block_header_t header;
+    int err = 0;
+
+    if (ctx->parsing_state != STREAM_PARSING_STATE_BLOCK_HEADER) {
+        return SP_ERR_INVALID_STATE;
+    }
+
+    err = parse_block_header(data, &header);
+    if (err < 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+
+    // If the stream is created, expect the parent hash to be equal to context parent hash
+    if (ctx->is_created && memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+
+    // Update context
+    memcpy(ctx->current_block_issuer, header.issuer, sizeof(header.issuer));
+    ctx->current_block_length = header.length;
+    ctx->parsed_command_count = 0;
+
+    // Digest block header
+    err  = block_hash_header(&header, &ctx->digest);
+    if (err != 0) {
+        return SP_ERR_FAILED_TO_DIGEST;
+    }
+
+    // Expect a command to be sent next
+    ctx->parsing_state = STREAM_PARSING_STATE_COMMAND;
+    return SP_OK;
 }
 
-int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, buffer_t *trusted_data) {
+inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
     (void) trusted_data;
-    (void) data;
-    (void) ctx;
+    (void) trusted_data_len;
+    int ret = CX_OK;
+    cx_ecfp_private_key_t private_key = {0};
+    uint8_t chain_code[32] = {0};
 
-    return 0;
+    DEBUG_LOG_BUF("BLOCK ISSUER: ", ctx->current_block_issuer, MEMBER_KEY_LEN);
+    DEBUG_LOG_BUF("DEVICE KEY: ", ctx->device_public_key, MEMBER_KEY_LEN);
+
+    // If the command was issued by the device, save the seed in the stream context
+    // otherwise create and return a trusted member
+    if (memcmp(ctx->current_block_issuer, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+        // Initialize private key
+        ret = crypto_derive_private_key(&private_key, chain_code, SEED_ID_PATH, SEED_ID_PATH_LEN);
+        if (ret != CX_OK) {
+            DEBUG_PRINT("Failed to derive private key\n")
+            explicit_bzero(&private_key, sizeof(private_key));
+            return ret;
+        }
+    
+         DEBUG_PRINT("BIZARRE BEFORE\n")
+        // Decrypt the seed
+        ctx->shared_secret_len = crypto_ecdhe_decrypt(
+            &private_key, command->command.seed.ephemeral_public_key, command->command.seed.encrypted_xpriv,
+            sizeof(command->command.seed.encrypted_xpriv), command->command.seed.initialization_vector, 
+            ctx->shared_secret, sizeof(ctx->shared_secret)
+        );
+        explicit_bzero(&private_key, sizeof(private_key));
+        if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
+            return SP_ERR_INVALID_STREAM;
+        }
+        DEBUG_LOG_BUF("STREAM SHARED SECRET: ", ctx->shared_secret, ctx->shared_secret_len);
+    }
+
+    // Update the stream context
+    ctx->is_created = true;
+    return ret;
+}
+
+inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    // If the command was issued by the device, save the seed in the stream context
+
+    // Update the stream context
+    return SP_OK;
+}
+
+inline static int stream_parse_add_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    // If the command was issued for the device, save the key in the stream context
+
+    // Otherwise, issue a trusted member
+    return SP_OK;
+}
+
+inline static int stream_parse_publish_key_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    // Update the trusted member if the member was set
+    return SP_OK;
+}
+
+inline static int stream_parse_edit_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    // Update the trusted member if the member was set
+    return SP_OK;
+}
+
+inline static int stream_parse_close_stream_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    (void) command;
+    (void) trusted_data;
+    (void) trusted_data_len;
+
+    // Update the stream context
+    ctx->is_closed = true;
+    return SP_OK;
+}
+
+int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_data, size_t trusted_data_len) {
+    int err = SP_OK;
+    int length = 0;
+    block_command_t command;
+
+    if (ctx->parsing_state != STREAM_PARSING_STATE_COMMAND) {
+        return SP_ERR_INVALID_STATE;
+    }
+
+    // Parse command
+    err = parse_block_command(data, &command);
+    if (err < 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+
+    switch (command.type) {
+        case COMMAND_SEED:
+            length = stream_parse_seed_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        case COMMAND_DERIVE:
+            length = stream_parse_derive_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        case COMMAND_ADD_MEMBER:
+            length = stream_parse_add_member_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        case COMMAND_PUBLISH_KEY:
+            length = stream_parse_publish_key_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        case COMMAND_EDIT_MEMBER:
+            length = stream_parse_edit_member_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        case COMMAND_CLOSE_STREAM:
+            length = stream_parse_close_stream_command(ctx, &command, trusted_data, trusted_data_len);
+            break;
+        default:
+            break;
+    }
+
+    // Digest command
+    err = block_hash_command(&command, &ctx->digest);
+    if (err < 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+    // Update context
+    ctx->parsed_command_count += 1;
+
+    // If we have parsed all commands, expect a signature to be sent next
+    if (ctx->parsed_command_count == ctx->current_block_length) {
+        ctx->parsing_state = STREAM_PARSING_STATE_SIGNATURE;
+    }
+    return err == SP_OK ? length : err;
 }
 
 int stream_parse_signature(stream_ctx_t *ctx, buffer_t *data) {
     (void) data;
     (void) ctx;
+    uint8_t signature[MAX_DER_SIG_LEN] = {0};
+    int signature_len = 0;
 
+    signature_len = parse_block_signature(data, signature, sizeof(signature));
+    if (signature_len < 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+    if (crypto_verify_signature(ctx->current_block_issuer, &ctx->digest, signature, signature_len) != 1) {
+        return SP_ERR_INVALID_STREAM;
+    }
+    crypto_digest_update(&ctx->digest, data->ptr, data->size);
     return 0;
 }

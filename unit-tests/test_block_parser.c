@@ -388,6 +388,11 @@ static void test_stream_parse(void** state) {
     free((void*) buffer.ptr);
 }
 
+static int test_parse_derive_command(void** state) {
+    (void) state;
+    const char *command = "";
+}
+
 int main() {
     const struct CMUnitTest tests[] = {cmocka_unit_test(test_block_header_parse),
                                        cmocka_unit_test(test_block_commands_parse),

@@ -1,5 +1,6 @@
 #include "block_parser.h"
 #include "../common/tlv.h"
+#include "../common/read.h"
 
 int parse_block_header(buffer_t *data, block_header_t *out) {
     tlv_t tlv;
@@ -127,6 +128,60 @@ static int parse_publish_key_command(buffer_t *data, block_command_t *out) {
     return 0;
 }
 
+static int tlv_read_derivation_path(tlv_t *tlv, uint32_t *out, int out_len) {
+    if (tlv->type != TLV_TYPE_BYTES) {
+        return BP_UNEXPECTED_TLV;
+    }
+    int offset = 0;
+    int index = 0;
+    while (offset < tlv->length) {
+        if (tlv->length - offset < (int) sizeof(uint32_t)) {
+            return BP_UNEXPECTED_TLV;
+        }
+        if (index >= out_len) {
+            return BP_UNEXPECTED_TLV;
+        }
+        out[index] = read_u32_be(tlv->value, offset);
+        index += 1;
+    }
+    return 0;
+}
+
+static int parse_derive_command(buffer_t *data, block_command_t *out) {
+    tlv_t tlv;
+
+    // Read path
+    if (!tlv_read_next(data, &tlv) || !tlv_read_derivation_path(&tlv, out->command.derive.path, sizeof(out->command.derive.path))) {
+        return BP_UNEXPECTED_TLV;
+    }
+    out->command.derive.path_len = tlv.length / sizeof(uint32_t);
+    if (tlv.length % 4 != 0) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read group key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.derive.group_public_key)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read IV
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.derive.initialization_vector, IV_LEN)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read encrypted xpriv
+    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.derive.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    // Read ephemeral public key
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.derive.ephemeral_public_key)) {
+        return BP_UNEXPECTED_TLV;
+    }
+
+    return 0;
+}
+
 int parse_block_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
     size_t offset = data->offset;
@@ -149,6 +204,9 @@ int parse_block_command(buffer_t *data, block_command_t *out) {
         case COMMAND_PUBLISH_KEY:
             read = parse_publish_key_command(&commandBuffer, out);
             break;
+        case COMMAND_DERIVE:
+            read = parse_derive_command(&commandBuffer, out);
+            break;
         default:
             return BP_ERROR_UNKNOWN_COMMAND;
             break;
@@ -170,5 +228,5 @@ int parse_block_signature(buffer_t *data, uint8_t *out, size_t out_len) {
     }
 
     status = tlv_read_signature(&tlv, out, out_len) ? 0 : BP_UNEXPECTED_TLV;
-    return status >= 0 ? data->offset - offset : status;
+    return status >= 0 ? tlv.length : status;
 }

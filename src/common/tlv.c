@@ -44,7 +44,7 @@ bool tlv_read_varint_u32(tlv_t *tlv, uint32_t *out) {
 }
 
 bool tlv_read_hash(tlv_t *tlv, uint8_t *out) {
-    if (tlv->type != TLV_TYPE_HASH || tlv->length != HASH_LEN) {
+    if (tlv->type != TLV_TYPE_HASH || tlv->length > HASH_LEN) {
         return false;
     }
     memcpy(out, tlv->value, tlv->length);
@@ -52,7 +52,7 @@ bool tlv_read_hash(tlv_t *tlv, uint8_t *out) {
 }
 
 bool tlv_read_pubkey(tlv_t *tlv, uint8_t *out) {
-    if (tlv->type != TLV_TYPE_PUBKEY || tlv->length != MEMBER_KEY_LEN) {
+    if (tlv->type != TLV_TYPE_PUBKEY || tlv->length > MEMBER_KEY_LEN) {
         return false;
     }
     memcpy(out, tlv->value, tlv->length);

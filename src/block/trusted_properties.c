@@ -1,6 +1,7 @@
 #include "trusted_properties.h"
 #include "../crypto.h"
 #include <string.h>
+#include "../globals.h"
 
 // Format is [NONCE][DATA][CHECKSUM]
 
@@ -29,4 +30,20 @@ int deserialize_trusted_member(uint8_t *buffer, size_t buffer_size, stream_trust
     }
     memcpy((void *)out, buffer + TP_NONCE_SIZE, sizeof(stream_trusted_member_t));
     return TP_SUCCESS;
+}
+
+int set_trusted_member(stream_trusted_member_t *member, uint8_t *buffer, size_t buffer_size) {
+    memcpy(&G_context.stream.trusted_member, member, sizeof(stream_trusted_member_t));
+    if (buffer != NULL) {
+        return serialize_trusted_member(member, buffer, buffer_size);
+    }
+    return TP_SUCCESS;
+}
+
+int read_and_set_trusted_member(uint8_t *buffer, size_t buffer_size, stream_trusted_member_t *out) {
+    int ret = deserialize_trusted_member(buffer, buffer_size, out);
+    if (ret == TP_SUCCESS) {
+        memcpy(&G_context.stream.trusted_member, out, sizeof(stream_trusted_member_t));
+    }
+    return ret;
 }

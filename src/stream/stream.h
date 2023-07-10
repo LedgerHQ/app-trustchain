@@ -52,7 +52,8 @@ typedef struct {
     uint8_t current_block_length;                  // Number of instruction in the current block
     uint8_t parsed_command_count;                  // Number of command parsed in the current block
     stream_parsing_state_t parsing_state;          // Current state of the stream parser
-    crypto_hash_t digest;  // Current block digest
+    crypto_hash_t digest;  // Current block digest (for hash to sign)
+    crypto_hash_t full_block_digest; // Full block digest
 } stream_ctx_t;
 
 /**

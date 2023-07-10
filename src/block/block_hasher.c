@@ -23,7 +23,7 @@ static int write_u16(const uint16_t value, uint8_t *out) {
     return sizeof(value);
 }
 
-static int write_u32(const uint16_t value, uint8_t *out) {
+static int write_u32(const uint32_t value, uint8_t *out) {
     out[0] = (value >> 24) & 0xFF;
     out[1] = (value >> 16) & 0xFF;
     out[2] = (value >> 8) & 0xFF;
@@ -138,6 +138,8 @@ static void write_command_add_member(const block_command_t *command, crypto_hash
     offset += write_tl(TLV_TYPE_VARINT, sizeof(uint32_t), buffer + offset);
     offset += write_u32(command->command.add_member.permissions, buffer + offset);
 
+    DEBUG_LOG_BUF("ADD MEMBER \n", buffer, offset);
+
     crypto_digest_update(digest, buffer, offset);
 }
 
@@ -172,6 +174,8 @@ static void write_command_publish_key(const block_command_t *command, crypto_has
     // Ephemeral public key
     offset += write_tl(TLV_TYPE_PUBKEY, MEMBER_KEY_LEN, buffer + offset);
     offset += write_bytes(command->command.publish_key.ephemeral_public_key, MEMBER_KEY_LEN, buffer + offset);
+
+    DEBUG_LOG_BUF("PUBLISH KEY \n", buffer, sizeof(buffer));
 
     crypto_digest_update(digest, buffer, offset);
 }
@@ -213,9 +217,9 @@ int block_hash_header(const block_header_t *header, crypto_hash_t *digest) {
             ret = e;
         }
         FINALLY {
-            return ret;
         }
     } END_TRY;
+    return ret;
 }
 
 int block_hash_command(const block_command_t *command, crypto_hash_t *digest) {
@@ -248,6 +252,28 @@ int block_hash_command(const block_command_t *command, crypto_hash_t *digest) {
         }
         FINALLY {
             
+        }
+    } END_TRY;
+    return ret;
+}
+
+int block_hash_signature(const uint8_t *signature, size_t signature_len, crypto_hash_t *digest) {
+    int ret = 0;
+    uint8_t buffer[TLV_HEADER_LEN + MAX_DER_SIG_LEN];
+    int offset = 0;
+
+    // Signature
+    offset += write_tl(TLV_TYPE_SIG, signature_len, buffer + offset);
+    offset += write_bytes(signature, signature_len, buffer + offset);
+    DEBUG_LOG_BUF("TLV SIG: ", buffer, offset);
+    BEGIN_TRY {
+        TRY {
+            crypto_digest_update(digest, buffer, offset);
+        }
+        CATCH_OTHER(e) {
+            ret = e;
+        }
+        FINALLY {
         }
     } END_TRY;
     return ret;

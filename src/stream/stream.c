@@ -6,6 +6,7 @@
 #include "block_hasher.h"
 #include "../crypto.h"
 #include "../debug.h"
+#include "../block/trusted_properties.h"
 
 void stream_init(stream_ctx_t *ctx) {
     // Expect the next item to be a block header
@@ -13,7 +14,15 @@ void stream_init(stream_ctx_t *ctx) {
 
     // Initialize the hash context
     crypto_digest_init(&ctx->digest);
+    crypto_digest_init(&ctx->full_block_digest);
     DEBUG_PRINT("INIT STREAM\n")
+}
+
+static int verify_block_parent_hash(stream_ctx_t *ctx, uint8_t *parent_hash) {
+    if (!ctx->is_created) {
+        return 1;
+    }
+    return memcmp(ctx->last_block_hash, parent_hash, HASH_LEN) == 0;
 }
 
 int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
@@ -33,6 +42,10 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     if (ctx->is_created && memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
+    // If the stream is created we expect the issuer of the block to be a trusted member
+    if (ctx->is_created && memcmp(header.issuer, ctx->trusted_member.member_key, sizeof(header.issuer)) != 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
 
     // Update context
     memcpy(ctx->current_block_issuer, header.issuer, sizeof(header.issuer));
@@ -41,8 +54,14 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
 
     // Digest block header
     err  = block_hash_header(&header, &ctx->digest);
+    block_hash_header(&header, &ctx->full_block_digest);
     if (err != 0) {
         return SP_ERR_FAILED_TO_DIGEST;
+    }
+
+    // Verify if block parent is right
+    if (verify_block_parent_hash(ctx, header.parent) != 1) {
+        return SP_ERR_INVALID_STREAM;
     }
 
     // Expect a command to be sent next
@@ -51,8 +70,6 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
 }
 
 inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
-    (void) trusted_data;
-    (void) trusted_data_len;
     int ret = CX_OK;
     cx_ecfp_private_key_t private_key = {0};
     uint8_t chain_code[32] = {0};
@@ -66,12 +83,9 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *
         // Initialize private key
         ret = crypto_derive_private_key(&private_key, chain_code, SEED_ID_PATH, SEED_ID_PATH_LEN);
         if (ret != CX_OK) {
-            DEBUG_PRINT("Failed to derive private key\n")
             explicit_bzero(&private_key, sizeof(private_key));
             return ret;
         }
-    
-         DEBUG_PRINT("BIZARRE BEFORE\n")
         // Decrypt the seed
         ctx->shared_secret_len = crypto_ecdhe_decrypt(
             &private_key, command->command.seed.ephemeral_public_key, command->command.seed.encrypted_xpriv,
@@ -83,6 +97,12 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *
             return SP_ERR_INVALID_STREAM;
         }
         DEBUG_LOG_BUF("STREAM SHARED SECRET: ", ctx->shared_secret, ctx->shared_secret_len);
+    } else {
+        // Issue a trusted member for the issuer
+        memcpy(ctx->trusted_member.member_key, ctx->current_block_issuer, MEMBER_KEY_LEN);
+        ctx->trusted_member.owns_key = true;
+        ctx->trusted_member.permissions = OWNER;
+        ret = serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
     }
 
     // Update the stream context
@@ -164,6 +184,7 @@ int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_dat
 
     // Digest command
     err = block_hash_command(&command, &ctx->digest);
+    block_hash_command(&command, &ctx->full_block_digest);
     if (err < 0) {
         return SP_ERR_INVALID_STREAM;
     }
@@ -190,6 +211,7 @@ int stream_parse_signature(stream_ctx_t *ctx, buffer_t *data) {
     if (crypto_verify_signature(ctx->current_block_issuer, &ctx->digest, signature, signature_len) != 1) {
         return SP_ERR_INVALID_STREAM;
     }
-    crypto_digest_update(&ctx->digest, data->ptr, data->size);
+    block_hash_signature(signature, signature_len, &ctx->full_block_digest);
+    crypto_digest_finalize(&ctx->full_block_digest, ctx->last_block_hash, sizeof(ctx->last_block_hash));
     return 0;
 }

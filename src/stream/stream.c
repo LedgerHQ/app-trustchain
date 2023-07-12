@@ -119,18 +119,36 @@ inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t
 
 inline static int stream_parse_add_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
     // If the command was issued for the device, save the key in the stream context
-
+    if (memcmp(command->command.add_member.public_key, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+        // Decrypt the key
+        // TODO IMPLEMENT
+        return SP_OK;
+    }
     // Otherwise, issue a trusted member
-    return SP_OK;
+    memcpy(ctx->trusted_member.member_key, command->command.add_member.public_key, MEMBER_KEY_LEN);
+    ctx->trusted_member.owns_key = false;
+    ctx->trusted_member.permissions = command->command.add_member.permissions;
+    return serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
 }
 
 inline static int stream_parse_publish_key_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+    // Nothing to be done if the recipient is the device
+    if (memcmp(command->command.publish_key.recipient, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+        return SP_OK;
+    }
+
     // Update the trusted member if the member was set
-    return SP_OK;
+    ctx->trusted_member.owns_key = true;
+    return serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
 }
 
 inline static int stream_parse_edit_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
     // Update the trusted member if the member was set
+    // NOT IMPLEMENTED
+    (void) ctx;
+    (void) command;
+    (void) trusted_data;
+    (void) trusted_data_len;
     return SP_OK;
 }
 

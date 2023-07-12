@@ -9,6 +9,10 @@
  */
 #define SW_DENY 0x6985
 /**
+ * Status word for wrong data.
+ */
+#define SW_WRONG_DATA 0x6A80
+/**
  * Status word for incorrect P1 or P2.
  */
 #define SW_WRONG_P1P2 0x6A86
@@ -78,3 +82,7 @@
  * Status for fail when the stream is closed
 */
 #define SW_STREAM_CLOSED 0xB00C
+
+/**
+ * Status for fail when the stream is closed
+*/

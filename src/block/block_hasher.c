@@ -138,8 +138,6 @@ static void write_command_add_member(const block_command_t *command, crypto_hash
     offset += write_tl(TLV_TYPE_VARINT, sizeof(uint32_t), buffer + offset);
     offset += write_u32(command->command.add_member.permissions, buffer + offset);
 
-    DEBUG_LOG_BUF("ADD MEMBER \n", buffer, offset);
-
     crypto_digest_update(digest, buffer, offset);
 }
 
@@ -174,8 +172,6 @@ static void write_command_publish_key(const block_command_t *command, crypto_has
     // Ephemeral public key
     offset += write_tl(TLV_TYPE_PUBKEY, MEMBER_KEY_LEN, buffer + offset);
     offset += write_bytes(command->command.publish_key.ephemeral_public_key, MEMBER_KEY_LEN, buffer + offset);
-
-    DEBUG_LOG_BUF("PUBLISH KEY \n", buffer, sizeof(buffer));
 
     crypto_digest_update(digest, buffer, offset);
 }
@@ -265,7 +261,6 @@ int block_hash_signature(const uint8_t *signature, size_t signature_len, crypto_
     // Signature
     offset += write_tl(TLV_TYPE_SIG, signature_len, buffer + offset);
     offset += write_bytes(signature, signature_len, buffer + offset);
-    DEBUG_LOG_BUF("TLV SIG: ", buffer, offset);
     BEGIN_TRY {
         TRY {
             crypto_digest_update(digest, buffer, offset);

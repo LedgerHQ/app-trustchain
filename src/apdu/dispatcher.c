@@ -31,6 +31,7 @@
 #include "../handler/sign_block.h"
 #include "../handler/parse_stream.h"
 #include "../handler/init_signature_flow.h"
+#include "../handler/set_trusted_member.h"
 #include "../debug.h"
 
 int apdu_dispatcher(const command_t *cmd) {
@@ -116,6 +117,18 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.size = cmd->lc;
             buf.offset = 0;
             return handler_parse_stream(&buf, cmd->p1, cmd->p2);
+        case SET_TRUSTED_MEMBER:
+            // This command sets the trusted member before sending a command implying this member.
+            // P1 and P2 are unused
+
+            if (cmd->p1 != 0 || cmd->p2 != 0) {
+                return io_send_sw(SW_WRONG_P1P2);
+            }
+
+            buf.ptr = cmd->data;
+            buf.size = cmd->lc;
+            buf.offset = 0;
+            return handler_set_trusted_member(&buf);
         default:
             return io_send_sw(SW_INS_NOT_SUPPORTED);
     }

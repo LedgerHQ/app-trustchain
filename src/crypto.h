@@ -3,12 +3,23 @@
 
 #include <stdint.h>  // uint*_t
 
+#ifndef TEST
+
 #include "os.h"
 #include "cx.h"
 
+typedef cx_sha256_t crypto_hash_t;
+typedef cx_ecfp_private_key_t crypto_private_key_t;
+typedef cx_ecfp_public_key_t crypto_public_key_t;
+
+#else
+#include <lib/crypto.h>
+#endif
+
 #define C_IV_LEN 16
 
-typedef cx_sha256_t crypto_hash_t;
+
+
 
 /**
  * Derive private key given BIP32 path.
@@ -25,10 +36,23 @@ typedef cx_sha256_t crypto_hash_t;
  * @return 0 on success, error number otherwise.
  *
  */
-int crypto_derive_private_key(cx_ecfp_private_key_t *private_key,
+int crypto_derive_private_key(crypto_private_key_t *private_key,
                               uint8_t chain_code[static 32],
                               const uint32_t *bip32_path,
                               uint8_t bip32_path_len);
+
+/**
+ * Derive an xpriv to a child xpriv given BIP32 path.
+ * 
+ * @param[in]  root_xpriv The xpriv to derive from. The first 32 bytes are the private key, the last 32 bytes are the chain code.
+ * @param[in]  bip32_path The BIP32 path to derive to.
+ * @param[in]  bip32_path_len The length of the BIP32 path.
+ * @param[out] xpriv The derived xpriv. The first 32 bytes are the private key, the last 32 bytes are the chain code.
+ * @param[out] public_key The derived public key.
+ * 
+ * @return 0 on success, error number otherwise.
+*/
+int crypto_derive_xpriv(uint8_t *root_xpriv, const uint32_t *bip32_path, uint8_t bip32_path_len, uint8_t *xpriv, uint8_t *public_key);
 
 /**
  * Initialize public key given private key.
@@ -43,8 +67,8 @@ int crypto_derive_private_key(cx_ecfp_private_key_t *private_key,
  * @throw INVALID_PARAMETER
  *
  */
-void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
-                            cx_ecfp_public_key_t *public_key,
+void crypto_init_public_key(crypto_private_key_t *private_key,
+                            crypto_public_key_t *public_key,
                             uint8_t raw_public_key[static 64]);
 
 /**
@@ -60,7 +84,7 @@ int crypto_decompress_public_key(const uint8_t *compressed_public_key, uint8_t p
 /**
  * Perform ECDH between a private key and a compressed public key.
 */
-int crypto_ecdh(const cx_ecfp_private_key_t *private_key,
+int crypto_ecdh(const crypto_private_key_t *private_key,
                 const uint8_t *compressed_public_key,
                 uint8_t *secret);
 
@@ -86,7 +110,7 @@ int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *ephemera
  * 
  * @return The length of the decrypted data on success, a negative number in case of error.
 */
-int crypto_ecdhe_decrypt(const cx_ecfp_private_key_t *private_key, const uint8_t *sender_public_key, 
+int crypto_ecdhe_decrypt(const crypto_private_key_t *private_key, const uint8_t *sender_public_key, 
                          const uint8_t *data, uint32_t data_len, uint8_t *initialization_vector,
                          uint8_t *decrypted_data, uint32_t decrypted_data_len);
 

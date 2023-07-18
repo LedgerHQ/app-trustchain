@@ -60,7 +60,7 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     (void) signer;
     cx_ecfp_private_key_t private_key;
     cx_ecfp_public_key_t public_key;
-    uint8_t xpriv[64];;
+    uint8_t xpriv[64];
     uint8_t secret[32];
     buffer_t buffer;
     int ret = 0;
@@ -132,7 +132,44 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     // User approval
     // TODO implement user approval
 
+    // Set the shared secret in the stream
+    memcpy(G_context.stream.shared_secret, xpriv, sizeof(xpriv));
+    G_context.stream.shared_secret_len = sizeof(xpriv);
+
     return ret < 0 ? ret : 0;
+}
+
+static int signer_inject_derive(signer_ctx_t *signer, block_command_t *command) {
+    int err = SP_OK;
+    uint8_t xpriv[64];
+    
+    DEBUG_PRINT("INJECT DERIVE\n")
+    // If the shared secret is not set, return an error
+    if (G_context.stream.shared_secret_len == 0) {
+        return SP_ERR_INVALID_STATE;
+    }
+
+    // Check the derivation path is valid
+    if (!bip32_path_is_hardened(command->command.derive.path, command->command.derive.path_len)) {
+        // Only accept hardened derivations
+        return SP_ERR_INVALID_STREAM;
+    }
+
+    // Derive the xpriv with the derivation path
+
+
+    // Perform ECDHE
+
+    // Encrypt the xpriv with the shared secret
+
+    // User approval
+    // TODO implement user approval  
+
+     // Set the derived xpriv in the stream
+
+    DEBUG_LOG_BUF("PATH: ", command->command.derive.path, command->command.derive.path_len * sizeof(uint32_t));
+    DEBUG_PRINT("ALL GOOD\n");
+    return SP_OK;
 }
 
 static int signer_inject_add_member(signer_ctx_t *signer, block_command_t *command) {
@@ -170,11 +207,13 @@ static int signer_inject_publish_key(signer_ctx_t *signer, block_command_t *comm
 
     // If trusted member don't match the an error
     if (memcmp(G_context.stream.trusted_member.member_key, command->command.publish_key.recipient, MEMBER_KEY_LEN) != 0) {
+        DEBUG_PRINT("Trusted member don't match\n");
         return BS_INVALID_STATE;
     }
 
     // If we don't have the xpriv, return an error
     if (G_context.stream.shared_secret_len == 0) {
+        DEBUG_PRINT("No shared secret\n");
         return BS_INVALID_STATE;
     }
 
@@ -183,21 +222,25 @@ static int signer_inject_publish_key(signer_ctx_t *signer, block_command_t *comm
 
     // Perform ECDHE
     err = crypto_ephemeral_ecdh(command->command.publish_key.recipient, command->command.publish_key.ephemeral_public_key, secret);
-    if (err != 0)
+    if (err != 0) {
+        DEBUG_PRINT("ECDHE failed\n");
         return err;
+    }
 
     // Encrypt xpriv
     DEBUG_LOG_BUF("XPRIV (PUBLISH KEY): ", G_context.stream.shared_secret, G_context.stream.shared_secret_len);
     err = crypto_encrypt(secret, sizeof(secret), G_context.stream.shared_secret, G_context.stream.shared_secret_len, command->command.publish_key.initialization_vector,
                    command->command.publish_key.encrypted_xpriv, sizeof(command->command.publish_key.encrypted_xpriv), false);
-    if (err < 0)
+    if (err < 0) {
+        DEBUG_PRINT("Encryption failed\n");
         return err;
+    }
     command->command.publish_key.encrypted_xpriv_size = sizeof(command->command.publish_key.encrypted_xpriv);
 
     // DEBUG
-    DEBUG_LOG_BUF("[] ENCR XPRIV", command->command.publish_key.encrypted_xpriv, command->command.publish_key.encrypted_xpriv_size);
-    DEBUG_LOG_BUF("[] EPHEMERAL PUBLIC KEY", command->command.publish_key.ephemeral_public_key, sizeof(command->command.publish_key.ephemeral_public_key));
-    DEBUG_LOG_BUF("[] INITIALIZATION VECTOR", command->command.publish_key.initialization_vector, sizeof(command->command.publish_key.initialization_vector));
+    DEBUG_LOG_BUF("[] ENCR XPRIV: ", command->command.publish_key.encrypted_xpriv, command->command.publish_key.encrypted_xpriv_size);
+    DEBUG_LOG_BUF("[] EPHEMERAL PUBLIC KEY: ", command->command.publish_key.ephemeral_public_key, sizeof(command->command.publish_key.ephemeral_public_key));
+    DEBUG_LOG_BUF("[] INITIALIZATION VECTOR: ", command->command.publish_key.initialization_vector, sizeof(command->command.publish_key.initialization_vector));
     
 
     // Push trusted properties
@@ -250,7 +293,9 @@ int signer_parse_command(signer_ctx_t *signer,
 
     // First pass: inject data in command buffer
     io_init_trusted_property();
-    if (command.type == COMMAND_SEED) {
+    switch (command.type)
+    {
+    case COMMAND_SEED:
         if (stream->is_created) {
             return BS_INVALID_STATE;
         }
@@ -260,19 +305,26 @@ int signer_parse_command(signer_ctx_t *signer,
                command.command.seed.topic,
                command.command.seed.topic_len);
         err = signer_inject_seed(signer, &command);
-    } else if (command.type == COMMAND_ADD_MEMBER) {
-        DEBUG_PRINT("SIGNER PARSE COMMAND ADD MEMBER\n")
+        break;
+    case COMMAND_ADD_MEMBER:
         if (!stream->is_created) {
             return BS_INVALID_STATE;
         }
         err = signer_inject_add_member(signer, &command);
-    } else if (command.type == COMMAND_PUBLISH_KEY) {
-        DEBUG_PRINT("SIGNER PARSE COMMAND PUBLISH KEY\n")
+        break;
+    case COMMAND_PUBLISH_KEY:
         err = signer_inject_publish_key(signer, &command);
-    } else {
-        return BP_ERROR_UNKNOWN_COMMAND;
+        break;
+    case COMMAND_DERIVE:
+        err = signer_inject_derive(signer, &command);
+        break;
+    default:
+        // Force fail if we don't know the command
+        err = BP_ERROR_UNKNOWN_COMMAND;
+        DEBUG_LOG_BUF("Unknown command: ", (uint8_t *) &command.type, sizeof(command.type));
+        break;
     }
-    
+ 
     if (err != 0) {
         signer_reset();
         return err;
@@ -282,13 +334,6 @@ int signer_parse_command(signer_ctx_t *signer,
     block_hash_command(&command, &signer->digest);
 
     signer->parsed_command += 1;
-    return 0;
-}
-
-int signer_approve_command(stream_ctx_t *stream, buffer_t *trusted_data) {
-    (void) stream;
-    (void) trusted_data;
-
     return 0;
 }
 

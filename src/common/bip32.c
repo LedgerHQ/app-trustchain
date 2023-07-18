@@ -85,3 +85,17 @@ bool bip32_path_format(const uint32_t *bip32_path,
 
     return true;
 }
+
+bool bip32_path_is_hardened(const uint32_t *bip32_path, size_t bip32_path_len) {
+    for (size_t i = 0; i < bip32_path_len; i++) {
+        if ((bip32_path[i] & 0x80000000u) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int bip32_derive_xpriv(uint8_t *parent_private_key, uint8_t *parent_chain_code, int index,
+                       uint8_t *child_private_key, uint8_t *child_chain_code) {
+
+}

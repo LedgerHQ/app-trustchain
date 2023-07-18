@@ -46,7 +46,8 @@ static int assert_seed_command(buffer_t *buffer, expected_seed_command_t *expect
     int offset;
     block_command_t command;
     offset = parse_block_command(buffer, &command);
-    assert_return_code(offset, 0);
+    printf("offset = %d\n", offset);
+    assert_true(offset >= 0);
 
     assert_int_equal(command.type, COMMAND_SEED);
     char topic[65];

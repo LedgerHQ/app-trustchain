@@ -2,6 +2,7 @@
 #include "../common/tlv.h"
 #include "../common/read.h"
 #include "../debug.h"
+#include "../common/bip32.h"
 
 int parse_block_header(buffer_t *data, block_header_t *out) {
     tlv_t tlv;
@@ -144,6 +145,7 @@ static int tlv_read_derivation_path(tlv_t *tlv, uint32_t *out, int out_len) {
         }
         out[index] = read_u32_be(tlv->value, offset);
         index += 1;
+        offset += sizeof(uint32_t);
     }
     return 0;
 }
@@ -152,11 +154,11 @@ static int parse_derive_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
 
     // Read path
-    if (!tlv_read_next(data, &tlv) || !tlv_read_derivation_path(&tlv, out->command.derive.path, sizeof(out->command.derive.path))) {
+    if (!tlv_read_next(data, &tlv) || tlv_read_derivation_path(&tlv, out->command.derive.path, sizeof(out->command.derive.path)) != 0) {
         return BP_UNEXPECTED_TLV;
     }
     out->command.derive.path_len = tlv.length / sizeof(uint32_t);
-    if (tlv.length % 4 != 0) {
+    if (tlv.length % sizeof(uint32_t) != 0) {
         return BP_UNEXPECTED_TLV;
     }
 

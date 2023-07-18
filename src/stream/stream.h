@@ -7,9 +7,7 @@
 #include "../constants.h"
 #include "../common/buffer.h"
 
-#ifdef HAVE_SHA256  // Disabled for unit tests
 #include "../crypto.h"
-#endif
 
 typedef enum {
     STREAM_PARSING_STATE_NONE = 0x00,

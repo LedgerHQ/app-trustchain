@@ -56,6 +56,25 @@ int crypto_derive_private_key(cx_ecfp_private_key_t *private_key,
     return error;
 }
 
+int crypto_derive_xpriv(uint8_t *root_xpriv, const uint32_t *bip32_path, uint8_t bip32_path_len, uint8_t *xpriv, uint8_t *public_key) {
+    // Implementation of https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#private-parent-key--private-child-key
+    int err = CX_OK;
+
+    // BEGIN_TRY {
+    //     TRY {
+    //         os_perso_
+    //     }
+    // } CATCH_OTHER(e) {
+    //     err = e;
+    // } FINALLY {
+        
+    // }
+    // END_TRY;
+
+    return err;
+}
+
+
 void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
                             cx_ecfp_public_key_t *public_key,
                             uint8_t raw_public_key[static 64]) {

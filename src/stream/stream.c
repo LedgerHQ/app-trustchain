@@ -138,6 +138,9 @@ inline static int stream_parse_publish_key_command(stream_ctx_t *ctx, block_comm
     }
 
     // Update the trusted member if the member was set
+    if (memcmp(command->command.publish_key.recipient, ctx->trusted_member.member_key, MEMBER_KEY_LEN) != 0) {
+        return SP_OK; // Trusted member was not set, nothing to be done
+    }
     ctx->trusted_member.owns_key = true;
     return serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
 }
@@ -149,7 +152,7 @@ inline static int stream_parse_edit_member_command(stream_ctx_t *ctx, block_comm
     (void) command;
     (void) trusted_data;
     (void) trusted_data_len;
-    return SP_OK;
+    return -1;
 }
 
 inline static int stream_parse_close_stream_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
@@ -210,8 +213,12 @@ int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_dat
     ctx->parsed_command_count += 1;
 
     // If we have parsed all commands, expect a signature to be sent next
-    if (ctx->parsed_command_count == ctx->current_block_length) {
+    if (ctx->parsed_command_count >= ctx->current_block_length) {
         ctx->parsing_state = STREAM_PARSING_STATE_SIGNATURE;
+    }
+   
+    if (length == TP_BUFFER_OVERFLOW) {
+        return 0;
     }
     return err == SP_OK ? length : err;
 }

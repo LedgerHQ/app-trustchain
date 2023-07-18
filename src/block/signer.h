@@ -33,11 +33,6 @@ int signer_parse_command(signer_ctx_t *signer,
                          buffer_t *data);
 
 /**
- * Approve the last command with a trusted params previously computed
- */
-int signer_approve_command(stream_ctx_t *stream, buffer_t *trusted_data);
-
-/**
  * Sign the block
  */
 int signer_sign_block(signer_ctx_t *signer, stream_ctx_t *stream);

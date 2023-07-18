@@ -37,6 +37,7 @@ add_compile_definitions(TEST)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(../src)
+include_directories(.)
 
 add_executable(test_base58 test_base58.c)
 add_executable(test_bip32 test_bip32.c)
@@ -44,21 +45,16 @@ add_executable(test_buffer test_buffer.c)
 add_executable(test_format test_format.c)
 add_executable(test_write test_write.c)
 add_executable(test_apdu_parser test_apdu_parser.c)
-add_executable(test_tx_parser test_tx_parser.c)
-add_executable(test_tx_utils test_tx_utils.c)
 add_executable(test_block_parser test_block_parser.c)
 
 add_library(base58 SHARED ../src/common/base58.c)
-add_library(bip32 SHARED ../src/common/bip32.c)
+add_library(bip32 SHARED ../src/common/bip32.c lib/crypto.c)
 add_library(buffer SHARED ../src/common/buffer.c)
 add_library(read SHARED ../src/common/read.c)
 add_library(write SHARED ../src/common/write.c)
 add_library(format SHARED ../src/common/format.c)
 add_library(varint SHARED ../src/common/varint.c)
 add_library(apdu_parser SHARED ../src/apdu/parser.c)
-add_library(transaction_deserialize ../src/transaction/deserialize.c)
-add_library(transaction_serialize ../src/transaction/serialize.c)
-add_library(transaction_utils ../src/transaction/utils.c)
 add_library(tlv SHARED ../src/common/tlv.c)
 add_library(block_parser ../src/block/block_parser.c)
 
@@ -69,21 +65,6 @@ target_link_libraries(test_buffer PUBLIC cmocka gcov buffer bip32 varint write r
 target_link_libraries(test_format PUBLIC cmocka gcov format)
 target_link_libraries(test_write PUBLIC cmocka gcov write)
 target_link_libraries(test_apdu_parser PUBLIC cmocka gcov apdu_parser)
-target_link_libraries(test_tx_parser PUBLIC
-                      transaction_deserialize
-                      transaction_serialize
-                      buffer
-                      bip32
-                      cmocka
-                      gcov
-                      write
-                      read
-                      varint
-                      transaction_utils)
-target_link_libraries(test_tx_utils PUBLIC
-                      cmocka
-                      gcov
-                      transaction_utils)
 target_link_libraries(test_block_parser PUBLIC 
                       block_parser
                       tlv
@@ -101,6 +82,4 @@ add_test(test_buffer test_buffer)
 add_test(test_format test_format)
 add_test(test_write test_write)
 add_test(test_apdu_parser test_apdu_parser)
-add_test(test_tx_parser test_tx_parser)
-add_test(test_tx_utils test_tx_utils)
 add_test(test_block_parser test_block_parser)

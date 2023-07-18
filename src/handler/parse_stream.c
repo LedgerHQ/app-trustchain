@@ -23,6 +23,7 @@ static int handler_parse_command(buffer_t *data, parse_stream_output_mode_t outp
 
     if ((len = stream_parse_command(&G_context.stream, data, output_data == OUTPUT_MODE_NONE ? NULL : trusted_param_buffer,
                              output_data ? sizeof(trusted_param_buffer) : 0)) < 0) {
+        DEBUG_PRINT("PARSE COMMAND FAILED\n");
         return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
     }
 

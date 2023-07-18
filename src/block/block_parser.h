@@ -10,6 +10,7 @@ typedef enum {
     BP_OVERSIZED_FIELD = -4,
     BP_UNKNOWN_ENCRYPTION_DESCRIPTION = -5,
     BP_UNKNOWN_AGREEMENT_DESCRIPTION = -6,
+    BP_FAILED_TO_READ_DERIVATION_PATH = -7,
 } block_parser_error_t;
 
 int parse_block_header(buffer_t *data, block_header_t *out);

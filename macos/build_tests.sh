@@ -9,10 +9,15 @@ fi
 source macos/.env
 
 run=false
-while getopts 'r' OPTION; do
+test=''
+
+while getopts 'rt:' OPTION; do
   case "$OPTION" in
     r)
       run=true
+      ;;
+    t)
+      test=$OPTARG
       ;;
   esac
 done
@@ -23,3 +28,5 @@ docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledge
 if [[ $run == true ]]; then
     ./macos/test.sh
 fi
+
+[ -z "$test" ] || docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder "./unit-tests/build/$test"

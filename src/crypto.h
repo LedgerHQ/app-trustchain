@@ -19,8 +19,6 @@ typedef cx_ecfp_public_key_t crypto_public_key_t;
 #define C_IV_LEN 16
 
 
-
-
 /**
  * Derive private key given BIP32 path.
  *
@@ -41,18 +39,19 @@ int crypto_derive_private_key(crypto_private_key_t *private_key,
                               const uint32_t *bip32_path,
                               uint8_t bip32_path_len);
 
+
 /**
- * Derive an xpriv to a child xpriv given BIP32 path.
+ * Performs HMAC-SHA512.
  * 
- * @param[in]  root_xpriv The xpriv to derive from. The first 32 bytes are the private key, the last 32 bytes are the chain code.
- * @param[in]  bip32_path The BIP32 path to derive to.
- * @param[in]  bip32_path_len The length of the BIP32 path.
- * @param[out] xpriv The derived xpriv. The first 32 bytes are the private key, the last 32 bytes are the chain code.
- * @param[out] public_key The derived public key.
+ * @param[in]  key The key used to compute the HMAC.
+ * @param[in]  key_len The length of the key.
+ * @param[in]  data The data to compute the HMAC of.
+ * @param[in]  data_len The length of the data.
  * 
  * @return 0 on success, error number otherwise.
-*/
-int crypto_derive_xpriv(uint8_t *root_xpriv, const uint32_t *bip32_path, uint8_t bip32_path_len, uint8_t *xpriv, uint8_t *public_key);
+ * 
+ */
+int crypto_hmac_sha512(uint8_t *key, uint32_t key_len, uint8_t *data, uint32_t data_len, uint8_t *hmac);
 
 /**
  * Initialize public key given private key.
@@ -72,12 +71,31 @@ void crypto_init_public_key(crypto_private_key_t *private_key,
                             uint8_t raw_public_key[static 64]);
 
 /**
+ * Initialize private key given raw private key.
+ * 
+ * @param[in]  raw_private_key The raw private key. MUST BE 32 BYTES LONG.
+ * @param[out] private_key The private key structure to initialize.
+ * 
+ */
+void crypto_init_private_key(uint8_t raw_private_key[static 32], crypto_private_key_t *private_key);
+
+/**
  * Compress public key.
+ * 
+ * @param[in]  public_key The public key to compress. Must be 65 bytes long (with 0x04 prefix).
+ * @param[out] compressed_public_key The compressed public key. Must be 33 bytes long.
+ * 
+ * @return 0 on success, error number otherwise.
 */
 int crypto_compress_public_key(const uint8_t *public_key, uint8_t compressed_public_key[static 33]);
 
 /**
  * Decompress public key.
+ * 
+ * @param[in]  compressed_public_key The compressed public key. Must be 33 bytes long.
+ * @param[out] public_key The decompressed public key. Must be 65 bytes long.
+ * 
+ * @return 0 on success, error number otherwise.
 */
 int crypto_decompress_public_key(const uint8_t *compressed_public_key, uint8_t public_key[static 65]);
 
@@ -228,3 +246,23 @@ int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len);
  * @return CX_OK on success, error code otherwise.
 */
 int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len);
+
+/**
+ * Computes (a + b) % curve_order.
+ * 
+ * @param[in]  a The first number to add. Must be 32 bytes long.
+ * @param[in]  b The second number to add. Must be 32 bytes long.
+ * @param[out] out The buffer to store the result in. Must be 32 bytes long.
+ * 
+ * @return 0 on success, error code otherwise.
+*/
+int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out);
+
+/**
+ * Check if the given private key is valid.
+ * 
+ * @param[in] private_key The private key to check. Must be 32 bytes long.
+ * 
+ * @return true if the private key is valid, false otherwise.
+*/
+bool crypto_ec_is_point_on_curve(const uint8_t *private_key);

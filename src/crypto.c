@@ -56,31 +56,17 @@ int crypto_derive_private_key(cx_ecfp_private_key_t *private_key,
     return error;
 }
 
-int crypto_derive_xpriv(uint8_t *root_xpriv, const uint32_t *bip32_path, uint8_t bip32_path_len, uint8_t *xpriv, uint8_t *public_key) {
-    // Implementation of https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#private-parent-key--private-child-key
-    int err = CX_OK;
-
-    // BEGIN_TRY {
-    //     TRY {
-    //         os_perso_
-    //     }
-    // } CATCH_OTHER(e) {
-    //     err = e;
-    // } FINALLY {
-        
-    // }
-    // END_TRY;
-
-    return err;
-}
-
-
 void crypto_init_public_key(cx_ecfp_private_key_t *private_key,
                             cx_ecfp_public_key_t *public_key,
                             uint8_t raw_public_key[static 64]) {
     // generate corresponding public key
     cx_ecfp_generate_pair(CX_CURVE_256K1, public_key, private_key, 1);
-    memmove(raw_public_key, public_key->W + 1, 64);
+    if (raw_public_key != NULL)
+        memmove(raw_public_key, public_key->W + 1, 64);
+}
+
+void crypto_init_private_key(uint8_t raw_private_key[static 32], crypto_private_key_t *private_key) {
+    cx_ecfp_init_private_key(CX_CURVE_256K1, raw_private_key, 32, private_key);
 }
 
 int crypto_compress_public_key(const uint8_t *public_key, uint8_t compressed_public_key[static 33]) {
@@ -436,4 +422,62 @@ int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len) {
 
 int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len) {
     return cx_hash_sha256(data, len, digest, digest_len);
+}
+
+int crypto_hmac_sha512(uint8_t *key, uint32_t key_len, uint8_t *data, uint32_t data_len, uint8_t *hmac) {
+    return 0;
+}
+
+int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+    cx_bn_t n;
+    cx_bn_t a_bn;
+    cx_bn_t b_bn;
+    cx_bn_t out_bn;
+
+    BEGIN_TRY {
+        TRY {
+            cx_bn_lock(32);
+            cx_bn_alloc(&n, 32);
+            cx_ecdomain_parameter_bn(CX_CURVE_256K1, CX_CURVE_PARAM_Order, n);
+            cx_bn_alloc_init(&a_bn, 32, a, 32);
+            cx_bn_alloc_init(&b_bn, 32, b, 32);
+            cx_bn_alloc(&out_bn, 32);
+            cx_bn_mod_add(out_bn, a_bn, b_bn, n);
+            cx_bn_export(out_bn, out, 32);
+            cx_bn_destroy(&a_bn);
+            cx_bn_destroy(&b_bn);
+            cx_bn_destroy(&out_bn);
+        }
+        CATCH_OTHER(e) {
+            return e;
+        }
+        FINALLY {
+            cx_bn_unlock();
+        }
+    } END_TRY;
+}
+
+bool crypto_ec_is_point_on_curve(const uint8_t *private_key) {
+    cx_bn_t n;
+    cx_bn_t private_key_bn;
+    int ret;
+
+    BEGIN_TRY {
+        TRY {
+            cx_bn_lock(32);
+            cx_bn_alloc(&n, 32);
+            cx_ecdomain_parameter_bn(CX_CURVE_256K1, CX_CURVE_PARAM_Order, n);
+            cx_bn_alloc_init(&private_key_bn, 32, private_key, 32);
+            cx_bn_cmp(private_key_bn, n, &ret);
+            cx_bn_destroy(&private_key_bn);
+            cx_bn_destroy(&n);
+        }
+        CATCH_OTHER(e) {
+            return e;
+        }
+        FINALLY {
+            cx_bn_unlock();
+        }
+    } END_TRY;
+    return ret < 0;
 }

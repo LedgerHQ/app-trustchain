@@ -147,7 +147,6 @@ iteration:
         crypto_init_private_key(parent_private_key, &data.soft.private_key);
         crypto_init_public_key(&data.soft.private_key, &data.soft.public_key, data.soft.raw_public_key + 1);
         data.soft.raw_public_key[0] = 0x04;
-        DEBUG_LOG_BUF("raw_public_key: ", data.soft.raw_public_key, 65);
         ret = crypto_compress_public_key(data.soft.raw_public_key, data.soft.compressed_public_key);
         if (ret != 0) {
             return ret;
@@ -158,12 +157,10 @@ iteration:
             return ret;
         }
     }
-    DEBUG_LOG_BUF("I: ", I, 64);
     ret = crypto_ec_add_mod_n(parent_private_key, I, child_private_key);
     if (ret != 0) {
         return ret;
     }
-    DEBUG_LOG_BUF("ki: ", child_private_key, 32);
     if (!crypto_ec_is_point_on_curve(child_private_key)) {
         index += 1;
         DEBUG_PRINT("got iteration\n");

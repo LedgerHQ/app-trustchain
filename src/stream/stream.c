@@ -28,25 +28,30 @@ static int verify_block_parent_hash(stream_ctx_t *ctx, uint8_t *parent_hash) {
 int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     block_header_t header;
     int err = 0;
-
+    DEBUG_PRINT("PARSE BLOCK HEADER 1\n")
     if (ctx->parsing_state != STREAM_PARSING_STATE_BLOCK_HEADER) {
         return SP_ERR_INVALID_STATE;
     }
-
+    DEBUG_PRINT("PARSE BLOCK HEADER 2\n")
     err = parse_block_header(data, &header);
     if (err < 0) {
         return SP_ERR_INVALID_STREAM;
     }
-
+    DEBUG_PRINT("PARSE BLOCK HEADER 3\n")
     // If the stream is created, expect the parent hash to be equal to context parent hash
     if (ctx->is_created && memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
+    DEBUG_PRINT("PARSE BLOCK HEADER 4\n")
+    DEBUG_LOG_BUF("BLOCK ISSUER: ", header.issuer, MEMBER_KEY_LEN);
+    DEBUG_LOG_BUF("DEVICE KEY: ", ctx->device_public_key, MEMBER_KEY_LEN);
     // If the stream is created we expect the issuer of the block to be a trusted member
-    if (ctx->is_created && memcmp(header.issuer, ctx->trusted_member.member_key, sizeof(header.issuer)) != 0) {
+    if (ctx->is_created && 
+        memcmp(header.issuer, ctx->trusted_member.member_key, sizeof(header.issuer)) != 0 &&
+        memcmp(header.issuer, ctx->device_public_key, sizeof(header.issuer)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
-
+    DEBUG_PRINT("PARSE BLOCK HEADER 5\n")
     // Update context
     memcpy(ctx->current_block_issuer, header.issuer, sizeof(header.issuer));
     ctx->current_block_length = header.length;
@@ -58,7 +63,7 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     if (err != 0) {
         return SP_ERR_FAILED_TO_DIGEST;
     }
-
+    DEBUG_PRINT("PARSE BLOCK HEADER 6\n")
     // Verify if block parent is right
     if (verify_block_parent_hash(ctx, header.parent) != 1) {
         return SP_ERR_INVALID_STREAM;
@@ -111,9 +116,35 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *
 }
 
 inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
-    // If the command was issued by the device, save the seed in the stream context
+    (void) trusted_data;
+    (void) trusted_data_len;
+    cx_ecfp_private_key_t private_key = {0};
+    uint8_t chain_code[32] = {0};
+    int ret = CX_OK;
 
-    // Update the stream context
+    // If the command was issued by the device, save the seed in the stream context
+    if (memcmp(ctx->current_block_issuer, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+        // Initialize private key
+        ret = crypto_derive_private_key(&private_key, chain_code, SEED_ID_PATH, SEED_ID_PATH_LEN);
+        if (ret != CX_OK) {
+            explicit_bzero(&private_key, sizeof(private_key));
+            return ret;
+        }
+        // Decrypt the xpriv
+        ctx->shared_secret_len = crypto_ecdhe_decrypt(
+            &private_key, command->command.derive.ephemeral_public_key, command->command.derive.encrypted_xpriv,
+            sizeof(command->command.derive.encrypted_xpriv), command->command.derive.initialization_vector, 
+            ctx->shared_secret, sizeof(ctx->shared_secret)
+        );
+        explicit_bzero(&private_key, sizeof(private_key));
+        if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
+            return SP_ERR_INVALID_STREAM;
+        }
+        DEBUG_LOG_BUF("STREAM SHARED SECRET (from derivation): ", ctx->shared_secret, ctx->shared_secret_len);
+        return SP_OK;
+    }
+
+    // Nothing to update in the stream context
     return SP_OK;
 }
 
@@ -177,6 +208,11 @@ int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_dat
     // Parse command
     err = parse_block_command(data, &command);
     if (err < 0) {
+        return SP_ERR_INVALID_STREAM;
+    }
+
+    // If the stream.is_created is false, only the seed command is allowed.
+    if (!ctx->is_created && command.type != COMMAND_SEED) {
         return SP_ERR_INVALID_STREAM;
     }
 

@@ -43,7 +43,6 @@ static void bn_to_bytes(bn_t *number, uint8_t *out) {
 
 int crypto_hmac_sha512(uint8_t *key, uint32_t key_len, uint8_t *data, uint32_t data_len, uint8_t *hmac) {
     hmac_sha512(key, key_len, data, data_len, hmac, 64);
-    DEBUG_LOG_BUF("hmac: ", hmac, 64);
     return 0;
 }
 

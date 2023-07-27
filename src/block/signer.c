@@ -8,6 +8,7 @@
 #include "block_hasher.h"
 #include "trusted_properties.h"
 #include "../globals.h"
+#include "../common/bip32.h"
 
 int signer_init(signer_ctx_t *signer) {
     crypto_digest_init(&signer->digest);
@@ -42,6 +43,8 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
 
     if (stream->is_created && !signer_verify_parent_hash(stream, block_header.parent)) {
         DEBUG_PRINT("INVALID PARENT HASH\n")
+        DEBUG_LOG_BUF("EXPECTED HASH: ", stream->last_block_hash, HASH_LEN);
+        DEBUG_LOG_BUF("RECEIVED HASH: ", block_header.parent, HASH_LEN);
         return BS_INVALID_PARENT_HASH;
     }
 
@@ -140,35 +143,103 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
 }
 
 static int signer_inject_derive(signer_ctx_t *signer, block_command_t *command) {
+    (void) signer;
     int err = SP_OK;
     uint8_t xpriv[64];
+    uint8_t secret[32];
+    cx_ecfp_private_key_t private_key;
+    cx_ecfp_public_key_t public_key;
+    uint8_t raw_public_key[65];
+    buffer_t buffer;
     
     DEBUG_PRINT("INJECT DERIVE\n")
     // If the shared secret is not set, return an error
     if (G_context.stream.shared_secret_len == 0) {
         return SP_ERR_INVALID_STATE;
     }
-
+    DEBUG_PRINT("INJECT DERIVE 1\n")
     // Check the derivation path is valid
     if (!bip32_path_is_hardened(command->command.derive.path, command->command.derive.path_len)) {
         // Only accept hardened derivations
         return SP_ERR_INVALID_STREAM;
     }
-
+    DEBUG_PRINT("INJECT DERIVE 2\n")
     // Derive the xpriv with the derivation path
-
+    err = bip32_derive_xpriv_to_path(
+        G_context.stream.shared_secret, 
+        G_context.stream.shared_secret + PRIVATE_KEY_LEN,
+        command->command.derive.path,
+        command->command.derive.path_len,
+        xpriv,
+        xpriv + PRIVATE_KEY_LEN 
+    );
+    if (err != SP_OK) {
+        return err;
+    }
+    DEBUG_PRINT("INJECT DERIVE 3\n")
+    // Generate IV
+    cx_trng_get_random_data(command->command.derive.initialization_vector, IV_LEN);
 
     // Perform ECDHE
-
+    err = crypto_ephemeral_ecdh(G_context.stream.device_public_key, command->command.derive.ephemeral_public_key, secret);
+    if (err != 0)
+        return err;
+    DEBUG_PRINT("INJECT DERIVE 4\n")
     // Encrypt the xpriv with the shared secret
+    err = crypto_encrypt(secret, sizeof(secret), xpriv, sizeof(xpriv), command->command.derive.initialization_vector,
+                   command->command.derive.encrypted_xpriv, sizeof(command->command.derive.encrypted_xpriv), false);
+    if (err < 0)
+        return err;
+    command->command.derive.encrypted_xpriv_size = sizeof(command->command.derive.encrypted_xpriv);
+    DEBUG_PRINT("INJECT DERIVE 5\n")
+    // Compute public key from xpriv
+    crypto_init_private_key(xpriv, &private_key);
+    crypto_init_public_key(&private_key, &public_key, raw_public_key + 1);
+    raw_public_key[0] = 0x04;
+    crypto_compress_public_key(raw_public_key, command->command.derive.group_public_key);
 
     // User approval
     // TODO implement user approval  
 
      // Set the derived xpriv in the stream
+    memcpy(G_context.stream.shared_secret, xpriv, sizeof(xpriv));
+    G_context.stream.shared_secret_len = sizeof(xpriv);
+    
+    explicit_bzero(xpriv, sizeof(xpriv));
+    explicit_bzero(&private_key, sizeof(private_key));
+    DEBUG_PRINT("INJECT DERIVE 6\n")
+    // Push trusted properties
+    // - push encrypted xpriv
+    buffer.ptr = command->command.derive.encrypted_xpriv;
+    buffer.size = sizeof(command->command.derive.encrypted_xpriv);
+    buffer.offset = 0;
+    err = io_push_trusted_property(TP_XPRIV, &buffer);
+    if (err != 0)
+        return err;
+    // - push ephemeral public key
+    buffer.ptr = command->command.derive.ephemeral_public_key;
+    buffer.size = sizeof(command->command.derive.ephemeral_public_key);
+    buffer.offset = 0;
+    err = io_push_trusted_property(TP_EPHEMERAL_PUBLIC_KEY, &buffer);
+    if (err != 0)
+        return err;
+    DEBUG_PRINT("INJECT DERIVE 7\n")
+    // - push initialization vector
+    buffer.ptr = command->command.derive.initialization_vector;
+    buffer.size = sizeof(command->command.derive.initialization_vector);
+    buffer.offset = 0;
+    err = io_push_trusted_property(TP_COMMAND_IV, &buffer);
+    if (err != 0)
+        return err;
+    DEBUG_PRINT("INJECT DERIVE 8\n")
+    // - push group key
+    buffer.ptr = command->command.derive.group_public_key;
+    buffer.size = sizeof(command->command.derive.group_public_key);
+    buffer.offset = 0;
+    err = io_push_trusted_property(TP_GROUPKEY, &buffer);
+    if (err != 0)
+        return err;
 
-    DEBUG_LOG_BUF("PATH: ", command->command.derive.path, command->command.derive.path_len * sizeof(uint32_t));
-    DEBUG_PRINT("ALL GOOD\n");
     return SP_OK;
 }
 
@@ -196,6 +267,7 @@ static int signer_inject_add_member(signer_ctx_t *signer, block_command_t *comma
 }
 
 static int signer_inject_publish_key(signer_ctx_t *signer, block_command_t *command) {
+    (void)signer;
     uint8_t buffer[TP_BUFFER_SIZE_NEW_MEMBER];
     buffer_t trusted_property = {
         .ptr = buffer,
@@ -274,6 +346,14 @@ static int signer_inject_publish_key(signer_ctx_t *signer, block_command_t *comm
     return io_push_trusted_property(TP_NEW_MEMBER, &trusted_property);
 }
 
+int signer_inject_close_stream(signer_ctx_t *signer, block_command_t *command) {
+    (void)signer;
+    (void)command;
+
+    G_context.stream.is_closed = true;
+    return 0;
+}
+
 int signer_parse_command(signer_ctx_t *signer,
                          stream_ctx_t *stream,
                          buffer_t *data) {
@@ -287,6 +367,7 @@ int signer_parse_command(signer_ctx_t *signer,
     int err = parse_block_command(data, &command);
 
     if (err < 0) {
+        DEBUG_PRINT("PARSE COMMAND FAILED\n");
         signer_reset();
         return err;
     }
@@ -317,6 +398,9 @@ int signer_parse_command(signer_ctx_t *signer,
         break;
     case COMMAND_DERIVE:
         err = signer_inject_derive(signer, &command);
+        break;
+    case COMMAND_CLOSE_STREAM:
+        err = signer_inject_close_stream(signer, &command);
         break;
     default:
         // Force fail if we don't know the command

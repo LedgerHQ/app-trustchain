@@ -93,7 +93,9 @@ static void write_command_derive(const block_command_t *command, crypto_hash_t *
 
     // Path
     offset += write_tl(TLV_TYPE_BYTES, command->command.derive.path_len * sizeof(uint32_t), buffer + offset);
-    offset += write_bytes((uint8_t *)command->command.derive.path, command->command.derive.path_len * sizeof(uint8_t), buffer + offset);
+    for (int i = 0; i < command->command.derive.path_len; i++) {
+        offset += write_u32(command->command.derive.path[i], buffer + offset);
+    }
 
     // Group key
     offset += write_tl(TLV_TYPE_PUBKEY, MEMBER_KEY_LEN, buffer + offset);

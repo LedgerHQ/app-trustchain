@@ -425,6 +425,7 @@ int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t d
 }
 
 int crypto_hmac_sha512(uint8_t *key, uint32_t key_len, uint8_t *data, uint32_t data_len, uint8_t *hmac) {
+    cx_hmac_sha512(key, key_len, data, data_len, hmac, 64);
     return 0;
 }
 
@@ -436,7 +437,7 @@ int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out) {
 
     BEGIN_TRY {
         TRY {
-            cx_bn_lock(32);
+            cx_bn_lock(32, 0);
             cx_bn_alloc(&n, 32);
             cx_ecdomain_parameter_bn(CX_CURVE_256K1, CX_CURVE_PARAM_Order, n);
             cx_bn_alloc_init(&a_bn, 32, a, 32);
@@ -455,6 +456,7 @@ int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out) {
             cx_bn_unlock();
         }
     } END_TRY;
+    return 0;
 }
 
 bool crypto_ec_is_point_on_curve(const uint8_t *private_key) {
@@ -464,7 +466,7 @@ bool crypto_ec_is_point_on_curve(const uint8_t *private_key) {
 
     BEGIN_TRY {
         TRY {
-            cx_bn_lock(32);
+            cx_bn_lock(32, 0);
             cx_bn_alloc(&n, 32);
             cx_ecdomain_parameter_bn(CX_CURVE_256K1, CX_CURVE_PARAM_Order, n);
             cx_bn_alloc_init(&private_key_bn, 32, private_key, 32);

@@ -1,7 +1,6 @@
 {
     "files.associations": {
-        "*.h": "c",
-        "__locale": "c"
+        "*.h": "c"
     },
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
     "editor.formatOnSave": false,
@@ -11,5 +10,4 @@
     "linux_udev_ledgerblue_rule_file":"20-ledger.ledgerblue.rules",
     "docker_image": "ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest",
     "container_name": "${workspaceFolderBasename}-container",
-    "C_Cpp.default.compilerPath": "/usr/bin/gcc",
 }

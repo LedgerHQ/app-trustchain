@@ -17,7 +17,21 @@ typedef cx_ecfp_public_key_t crypto_public_key_t;
 #endif
 
 #define C_IV_LEN 16
+#define C_ERROR -1
+#define C_OK CX_OK
 
+/**
+ * Generate a new key pair.
+ *
+ * @param[out] public_key
+ *   Pointer to public key.
+ * @param[out] private_key
+ *   Pointer to private key.
+ *
+ * @return 0 on success, error number otherwise.
+ *
+ */
+int crypto_generate_pair(crypto_public_key_t *public_key, crypto_private_key_t *private_key);
 
 /**
  * Derive private key given BIP32 path.
@@ -168,17 +182,6 @@ int crypto_decrypt(const uint8_t *secret, uint32_t secret_len,
                    uint8_t *initialization_vector, uint8_t *decrypted_data, uint32_t decrypted_data_len, bool padding);
 
 /**
- * Sign message hash in global context.
- *
- * @see G_context.bip32_path, G_context.tx_info.m_hash,
- * G_context.tx_info.signature.
- *
- * @return 0 on success, error number otherwise.
- *
- */
-int crypto_sign_message(void);
-
-/**
  * Sign block hash in global context.
  *
  * @see G_context.bip32_path, G_context.block_hash,
@@ -266,3 +269,11 @@ int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out);
  * @return true if the private key is valid, false otherwise.
 */
 bool crypto_ec_is_point_on_curve(const uint8_t *private_key);
+
+/**
+ * Generate a random private/public key pair.
+ * 
+ * @param[out] private_key The buffer to store the private key in. Must be 32 bytes long.
+ * @param[out] public_key The buffer to store the public key in. Must be 65 bytes long.
+*/
+int crypto_generate_random_keypair(crypto_private_key_t *private_key, crypto_public_key_t *public_key);

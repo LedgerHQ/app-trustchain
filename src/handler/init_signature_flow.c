@@ -5,8 +5,8 @@
 #include "debug.h"
 
 int handler_init_signature_flow(buffer_t *cdata) {
-    cx_ecfp_private_key_t private_key;
-    cx_ecfp_public_key_t session_key;
+    crypto_private_key_t private_key;
+    crypto_public_key_t session_key;
     uint8_t derivation_buffer[65] = {0};
     int ret;
 
@@ -17,7 +17,7 @@ int handler_init_signature_flow(buffer_t *cdata) {
 
     explicit_bzero(&G_context.signer_info, sizeof(G_context.signer_info));
 
-    if (cx_ecfp_generate_pair(CX_CURVE_256K1, &session_key, &private_key, 0) != 0) {
+    if (crypto_generate_pair(&session_key, &private_key) != C_OK) {
         return io_send_sw(SW_BAD_STATE);
     }
     DEBUG_PRINT("SESSION PRIVATE KEY: ")

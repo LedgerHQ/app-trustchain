@@ -7,4 +7,18 @@ fi
 
 source macos/.env
 
-docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder make
+clean=''
+while getopts ':c:' OPTION; do
+  case "$OPTION" in
+    c)
+      clean=$OPTARG
+      ;;
+  esac
+done
+shift "$(($OPTIND -1))"
+
+if [ -z $clean ]; then
+    docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE make clean
+fi
+
+docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE make

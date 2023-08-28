@@ -4,7 +4,7 @@
 #include <stdint.h>  // uint*_t
 
 #include "constants.h"
-#include "common/bip32.h"
+#include "bip32.h"
 
 #include "stream/stream.h"
 #include "block/signer.h"
@@ -12,15 +12,6 @@
 #ifdef HAVE_SHA3
 #include <cx.h>
 #endif
-
-/**
- * Enumeration for the status of IO.
- */
-typedef enum {
-    READY,     /// ready for new event
-    RECEIVED,  /// data received
-    WAITING    /// waiting
-} io_state_e;
 
 /**
  * Enumeration with expected INS of APDU commands.
@@ -34,18 +25,6 @@ typedef enum {
     PARSE_STREAM = 0x08,    /// parse a stream
     SET_TRUSTED_MEMBER = 0x09,  /// set a trusted member for upcoming commands
 } command_e;
-
-/**
- * Structure with fields of APDU command.
- */
-typedef struct {
-    uint8_t cla;    /// Instruction class
-    command_e ins;  /// Instruction code
-    uint8_t p1;     /// Instruction parameter 1
-    uint8_t p2;     /// Instruction parameter 2
-    uint8_t lc;     /// Length of command data
-    uint8_t *data;  /// Command data
-} command_t;
 
 /**
  * Enumeration with parsing state.

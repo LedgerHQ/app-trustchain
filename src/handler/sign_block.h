@@ -3,7 +3,7 @@
 #include <stdint.h>   // uint*_t
 #include <stdbool.h>  // bool
 
-#include "../common/buffer.h"
+#include "buffer.h"
 
 #define MODE_BLOCK_START 0x00
 #define MODE_COMMAND_PARSE 0x01

@@ -11,7 +11,7 @@
 
 #include "block/types.h"
 #include "block/block_parser.h"
-#include "common/buffer.h"
+#include "buffer.h"
 #include <stdio.h>
 
 static void hex_to_buffer(const char* hex, buffer_t* buffer) {
@@ -368,15 +368,17 @@ static void test_stream_parse(void** state) {
     free((void*) buffer.ptr);
 }
 
-static int test_parse_derive_command(void** state) {
+static void test_parse_derive_command(void** state) {
     (void) state;
     const char *command = "";
+    // TODO: implement
 }
 
 int main() {
     const struct CMUnitTest tests[] = {cmocka_unit_test(test_block_header_parse),
                                        cmocka_unit_test(test_block_commands_parse),
-                                       cmocka_unit_test(test_stream_parse)};
+                                       cmocka_unit_test(test_stream_parse),
+                                       cmocka_unit_test(test_parse_derive_command)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

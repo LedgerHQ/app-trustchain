@@ -41,7 +41,7 @@ void debug_write_hex(const uint8_t *buf, uint32_t len);
         apdu_log_buf.ptr = buf; \
         apdu_log_buf.size = len; \
         apdu_log_buf.offset = 0; \
-        io_send_response(&apdu_log_buf, 0x9000); \
+        io_send_response_pointer(apdu_log_buf.ptr, apdu_log_buf.size, 0x9000); \
         return -1; \
     }
 #define APDU_LOG_BN(bn) \
@@ -52,7 +52,7 @@ void debug_write_hex(const uint8_t *buf, uint32_t len);
         apdu_log_buf.ptr = n; \
         apdu_log_buf.size = 32; \
         apdu_log_buf.offset = 0; \
-        io_send_response(&apdu_log_buf, 0x9000); \
+        io_send_response_pointer(apdu_log_buf.ptr, apdu_log_buf.size, 0x9000); \
         return -1; \
     }
 #else

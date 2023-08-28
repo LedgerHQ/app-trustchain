@@ -16,11 +16,13 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR})
+
 # Build secp256k1 optimized library
 add_subdirectory(./secp256k1)
 
 include(CTest)
-ENABLE_TESTING()
+enable_testing()
 
 # specify C standard
 set(CMAKE_C_STANDARD 11)
@@ -37,39 +39,35 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 add_compile_definitions(TEST)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(../src)
+include_directories($ENV{BOLOS_SDK}/lib_standard_app)
+
 include_directories(.)
 include_directories(./secp256k1/include)
 
-add_executable(test_base58 test_base58.c)
+# EXECUTABLE DECLARATION
 add_executable(test_bip32 test_bip32.c)
-add_executable(test_buffer test_buffer.c)
-add_executable(test_format test_format.c)
-add_executable(test_write test_write.c)
-add_executable(test_apdu_parser test_apdu_parser.c)
 add_executable(test_block_parser test_block_parser.c)
 
-add_library(base58 SHARED ../src/common/base58.c)
-add_library(bip32 SHARED ../src/common/bip32.c)
-add_library(buffer SHARED ../src/common/buffer.c)
-add_library(read SHARED ../src/common/read.c)
-add_library(write SHARED ../src/common/write.c)
-add_library(format SHARED ../src/common/format.c)
-add_library(varint SHARED ../src/common/varint.c)
-add_library(apdu_parser SHARED ../src/apdu/parser.c)
+# STANDARD LIBRARIES
+add_library(base58 SHARED $ENV{BOLOS_SDK}/lib_standard_app/base58.c)
+add_library(bip32 SHARED $ENV{BOLOS_SDK}/lib_standard_app/bip32.c ../src/common/bip32_derivation.c)
+add_library(buffer SHARED $ENV{BOLOS_SDK}/lib_standard_app/buffer.c)
+add_library(read SHARED $ENV{BOLOS_SDK}/lib_standard_app/read.c)
+add_library(write SHARED $ENV{BOLOS_SDK}/lib_standard_app/write.c)
+add_library(format SHARED $ENV{BOLOS_SDK}/lib_standard_app/format.c)
+add_library(varint SHARED $ENV{BOLOS_SDK}/lib_standard_app/varint.c)
+add_library(apdu_parser SHARED $ENV{BOLOS_SDK}/lib_standard_app/parser.c)
+
+# CUSTOM LIBRARIES
 add_library(tlv SHARED ../src/common/tlv.c)
 add_library(block_parser ../src/block/block_parser.c)
 add_library(crypto SHARED ./lib/crypto.c ./lib/hmac_sha2.c ./lib/sha2.c ./lib/bn.c)
 add_library(dbg SHARED ./lib/debug.c)
 
-target_link_libraries(test_base58 PUBLIC cmocka gcov base58)
+# LINKAGE
 target_link_libraries(test_bip32 PUBLIC cmocka gcov bip32 read crypto base58 dbg write secp256k1 dbg)
-target_link_libraries(test_buffer PUBLIC cmocka gcov buffer bip32 varint write read crypto secp256k1 dbg)
-target_link_libraries(test_format PUBLIC cmocka gcov format)
-target_link_libraries(test_write PUBLIC cmocka gcov write)
-target_link_libraries(test_apdu_parser PUBLIC cmocka gcov apdu_parser)
 target_link_libraries(test_block_parser PUBLIC 
                       block_parser
                       tlv
@@ -84,10 +82,6 @@ target_link_libraries(test_block_parser PUBLIC
                       dbg
                       read)
 
-add_test(test_base58 test_base58)
+# TESTS DECLARATION
 add_test(test_bip32 test_bip32)
-add_test(test_buffer test_buffer)
-add_test(test_format test_format)
-add_test(test_write test_write)
-add_test(test_apdu_parser test_apdu_parser)
 add_test(test_block_parser test_block_parser)

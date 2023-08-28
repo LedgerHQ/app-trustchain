@@ -3,7 +3,7 @@
 #include <stdint.h>   // uint*_t
 #include <stdbool.h>  // bool
 
-#include "../common/buffer.h"
+#include "buffer.h"
 
 typedef enum {
     MODE_PARSE_BLOCK_HEADER = 0x00,

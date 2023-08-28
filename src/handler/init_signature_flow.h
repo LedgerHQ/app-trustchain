@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/buffer.h"
+#include "buffer.h"
 #include "cx.h"
 
 /**

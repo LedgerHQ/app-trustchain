@@ -4,11 +4,13 @@
 #include "cx.h"
 #include "crypto.h"
 #include "debug.h"
-#include "../io.h"
+#include "io.h"
+#include "../trusted_io.h"
 #include "block_hasher.h"
 #include "trusted_properties.h"
 #include "../globals.h"
-#include "../common/bip32.h"
+#include "bip32.h"
+#include "../common/bip32_derivation.h"
 
 int signer_init(signer_ctx_t *signer) {
     crypto_digest_init(&signer->digest);
@@ -69,7 +71,7 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     int ret = 0;
     
     // Generate private key
-    ret = cx_ecfp_generate_pair(CX_CURVE_256K1, &public_key, &private_key, 0);
+    ret = crypto_generate_pair(&public_key, &private_key);
     if (ret != 0)
         return ret;
 

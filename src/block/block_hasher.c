@@ -1,5 +1,5 @@
 #include "block_hasher.h"
-#include "../common/write.h"
+#include "write.h"
 #include "../common/tlv.h"
 #include "../debug.h"
 #include <string.h>

@@ -1,8 +1,8 @@
 #include "block_parser.h"
 #include "../common/tlv.h"
-#include "../common/read.h"
+#include "read.h"
 #include "../debug.h"
-#include "../common/bip32.h"
+#include "bip32.h"
 
 int parse_block_header(buffer_t *data, block_header_t *out) {
     tlv_t tlv;

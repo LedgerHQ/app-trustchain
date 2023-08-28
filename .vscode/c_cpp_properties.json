@@ -10,6 +10,9 @@
                 "/usr/include",
                 "${workspaceFolder}/src",
                 "${env:BOLOS_SDK}/include/*",
+                "${env:BOLOS_SDK}/lib_bagl/include/*",
+                "${env:BOLOS_SDK}/lib_cxng/include/*",
+                "${env:BOLOS_SDK}/target/nanos/include/*",
                 "${env:BOLOS_SDK}/lib_ux/include/*"
             ],
             "defines": [
@@ -19,6 +22,7 @@
                 "HAVE_SPRINTF",
                 "HAVE_IO_USB",
                 "HAVE_L4_USBLIB",
+                "HAVE_ECC",
                 "IO_USB_MAX_ENDPOINTS=6",
                 "IO_HID_EP_LENGTH=64",
                 "HAVE_USB_APDU",

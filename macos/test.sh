@@ -18,7 +18,7 @@ done
 shift "$(($OPTIND -1))"
 
 if [ -z $test ]; then
-    docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder ./macos/__run_tests.sh
+    docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE ./macos/__run_tests.sh
 else
-    docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder ./unit-tests/build/$test
+    docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE ./unit-tests/build/$test
 fi

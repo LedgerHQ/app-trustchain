@@ -11,7 +11,7 @@
 #include "../globals.h"
 #include "../crypto.h"
 #include "../ui/display.h"
-#include "../common/buffer.h"
+#include "buffer.h"
 #include "../block/block_parser.h"
 #include "../block/signer.h"
 #include "../helper/send_response.h"
@@ -19,6 +19,7 @@
 #include "sign_block.h"
 #include "../debug.h"
 #include "../block/signer.h"
+#include "../trusted_io.h"
 
 int handler_sign_block(buffer_t *cdata, uint8_t mode) {
     int error;

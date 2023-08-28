@@ -26,24 +26,20 @@
 #include "os.h"
 #include "glyphs.h"
 #include "nbgl_use_case.h"
+#include "io.h"
+#include "bip32.h"
+#include "format.h"
 
 #include "display.h"
 #include "constants.h"
 #include "../globals.h"
-#include "../io.h"
 #include "../sw.h"
 #include "../address.h"
 #include "action/validate.h"
 #include "../transaction/types.h"
-#include "../common/bip32.h"
-#include "../common/format.h"
 #include "../menu.h"
 
 static char g_address[43];
-static char g_bip32_path[60];
-
-static nbgl_layoutTagValue_t pairs[1];
-static nbgl_layoutTagValueList_t pairList;
 
 static void confirm_address_rejection(void) {
     // display a status page and go back to main
@@ -66,14 +62,7 @@ static void review_choice(bool confirm) {
 }
 
 static void continue_review(void) {
-    // Fill pairs
-    pairs[0].item = "BIP32 Path";
-    pairs[0].value = g_bip32_path;
-
-    pairList.nbMaxLinesForValue = 0;
-    pairList.nbPairs = 1;
-    pairList.pairs = pairs;
-    nbgl_useCaseAddressConfirmationExt(g_address, review_choice, &pairList);
+    nbgl_useCaseAddressConfirmation(g_address, review_choice);
 }
 
 int ui_display_address() {
@@ -82,11 +71,11 @@ int ui_display_address() {
         return io_send_sw(SW_BAD_STATE);
     }
 
-    memset(g_bip32_path, 0, sizeof(g_bip32_path));
+    char bip32_path[60] = {0};
     if (!bip32_path_format(G_context.bip32_path,
                            G_context.bip32_path_len,
-                           g_bip32_path,
-                           sizeof(g_bip32_path))) {
+                           bip32_path,
+                           sizeof(bip32_path))) {
         return io_send_sw(SW_DISPLAY_BIP32_PATH_FAIL);
     }
 
@@ -97,7 +86,7 @@ int ui_display_address() {
     }
     snprintf(g_address, sizeof(g_address), "0x%.*H", sizeof(address), address);
 
-    nbgl_useCaseReviewStart(&C_stax_app_boilerplate_64px,
+    nbgl_useCaseReviewStart(&C_app_boilerplate_64px,
                             "Verify BOL address",
                             NULL,
                             "Cancel",

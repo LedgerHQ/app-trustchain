@@ -5,7 +5,7 @@
 #include <stdbool.h>  // bool
 
 #include "../constants.h"
-#include "../common/buffer.h"
+#include "buffer.h"
 
 #include "../crypto.h"
 

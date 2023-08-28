@@ -5,12 +5,12 @@
 #include "../block/block_parser.h"
 #include "../debug.h"
 #include "../block/trusted_properties.h"
+#include "../trusted_io.h"
 
 static int handler_parse_header(buffer_t *data) {
     if (stream_parse_block_header(&G_context.stream, data) < 0) {
         return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
     }
-     
     return io_send_sw(SW_OK);
 }
 

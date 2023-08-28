@@ -23,10 +23,10 @@ while getopts 'rt:' OPTION; do
 done
 shift "$(($OPTIND -1))"
 
-docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder "./macos/__build_tests.sh"
+docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE "./macos/__build_tests.sh"
 
 if [[ $run == true ]]; then
     ./macos/test.sh
 fi
 
-[ -z "$test" ] || docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app"  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder "./unit-tests/build/$test"
+[ -z "$test" ] || docker run --rm -ti --user "$(id -u)":"$(id -g)" -v "$(pwd):/app" $DEV_TOOL_IMAGE "./unit-tests/build/$test"

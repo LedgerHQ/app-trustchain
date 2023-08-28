@@ -27,17 +27,17 @@
 #include "glyphs.h"
 #include "os_io_seproxyhal.h"
 #include "nbgl_use_case.h"
+#include "io.h"
+#include "bip32.h"
+#include "format.h"
 
 #include "display.h"
 #include "constants.h"
 #include "../globals.h"
-#include "../io.h"
 #include "../sw.h"
 #include "../address.h"
 #include "action/validate.h"
 #include "../transaction/types.h"
-#include "../common/bip32.h"
-#include "../common/format.h"
 #include "../menu.h"
 
 // Buffer where the transaction amount string is written
@@ -88,7 +88,7 @@ static void review_continue(void) {
     pairList.pairs = pairs;
 
     // Info long press
-    infoLongPress.icon = &C_stax_app_boilerplate_64px;
+    infoLongPress.icon = &C_app_boilerplate_64px;
     infoLongPress.text = "Sign transaction\nto send BOL";
     infoLongPress.longPressText = "Hold to sign";
 
@@ -119,7 +119,7 @@ int ui_display_transaction() {
     snprintf(g_address, sizeof(g_address), "0x%.*H", ADDRESS_LEN, G_context.tx_info.transaction.to);
 
     // Start review
-    nbgl_useCaseReviewStart(&C_stax_app_boilerplate_64px,
+    nbgl_useCaseReviewStart(&C_app_boilerplate_64px,
                             "Review transaction\nto send BOL",
                             NULL,
                             "Reject transaction",

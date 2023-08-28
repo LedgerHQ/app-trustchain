@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.h"
-#include "../common/buffer.h"
+#include "buffer.h"
 
 typedef enum {
     BP_ERROR_UNDEFINED = -1,

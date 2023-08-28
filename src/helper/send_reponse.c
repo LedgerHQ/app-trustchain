@@ -23,10 +23,10 @@
 #include "../constants.h"
 #include "../globals.h"
 #include "../sw.h"
-#include "common/buffer.h"
+#include "buffer.h"
 
 int helper_send_response_pubkey() {
-    return io_send_response(&(const buffer_t){.ptr = G_context.pk_info.compressed_pk,
+    return io_send_response_buffer(&(const buffer_t){.ptr = G_context.pk_info.compressed_pk,
                                               .size = sizeof(G_context.pk_info.compressed_pk),
                                               .offset = 0},
                             SW_OK);
@@ -43,5 +43,5 @@ int helper_send_response_block_signature() {
     memmove(resp + offset, G_context.signer_info.session_key, MEMBER_KEY_LEN); 
     offset += MEMBER_KEY_LEN;
 
-    return io_send_response(&(const buffer_t){.ptr = resp, .size = offset, .offset = 0}, SW_OK);
+    return io_send_response_buffer(&(const buffer_t){.ptr = resp, .size = offset, .offset = 0}, SW_OK);
 }

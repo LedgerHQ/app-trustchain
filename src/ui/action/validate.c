@@ -17,17 +17,20 @@
 
 #include <stdbool.h>  // bool
 
+#include "crypto_helpers.h"
+
 #include "validate.h"
 #include "../menu.h"
 #include "../../sw.h"
-#include "../../crypto.h"
 #include "../../globals.h"
 #include "../../helper/send_response.h"
 
 void validate_pubkey(bool choice) {
-    if (choice) {
-        helper_send_response_pubkey();
-    } else {
-        io_send_sw(SW_DENY);
-    }
+    (void) choice;
+    io_send_sw(SW_BAD_STATE);
+}
+
+void validate_transaction(bool choice) {
+    (void) choice;
+    io_send_sw(SW_BAD_STATE);
 }

@@ -180,6 +180,7 @@
             "type": "pickString",
             "description": "Choose a SDK to build with",
             "options": [
+                
                 "$NANOS_SDK",
                 "$NANOX_SDK",
                 "$NANOSP_SDK",

@@ -201,7 +201,7 @@ Each command must then be send to the device separately.
 | var | 0x9000 | `TRUSTED PROPERTIES` |
 
 ## SET_TRUSTED_MEMBER
-Set the trusted member to use to verify block informations. The trusted member must have been created during the current signer session.
+Set the trusted member to use to verify block information. The trusted member must have been created during the current signer session.
 
 **Note: This command will fail if the device is not currently in a signing session.**
 

@@ -231,6 +231,7 @@ int crypto_ecdh(const cx_ecfp_private_key_t *private_key,
     int error = 0;
     uint8_t raw_public_key[65] = {0};
     if ((error = crypto_decompress_public_key(compressed_public_key, raw_public_key)) != 0) {
+        (void) error;
         return C_ERROR;
     }
     error = cx_ecdh_no_throw(private_key, CX_ECDH_X, raw_public_key, 65, secret, 32);

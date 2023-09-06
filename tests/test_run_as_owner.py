@@ -210,7 +210,7 @@ def test_publish_key(backend):
     #Alice creates the stream and adds Bob
     stream = stream.edit().seed((Crypto.from_hex(DEFAULT_TOPIC))).add_member("Bob", bob_public_key,0xFFFFFFFF, True).issue(alice)
 
-    #Bob adds Charlie but doesnt't publish key
+    #Bob adds Charlie but doesn't publish key
     stream = stream.edit().add_member("Charlie", charlie_public_key, 0xFFFFFFFF, False).issue(bob)
 
     #Alice publishes the key to Charlie

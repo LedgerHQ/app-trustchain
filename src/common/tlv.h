@@ -29,7 +29,7 @@ typedef enum {
     TLV_TYPE_EDIT_MEMBER = 0x14,
     TLV_TYPE_REVOKE_KEY = 0x15,
 
-    // Aggreement protocols
+    // Agreement protocols
     TLV_TYPE_DEFAULT_AGGREEMENT = 0x60,
 
     // Key descriptions

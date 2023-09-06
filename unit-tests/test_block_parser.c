@@ -209,7 +209,7 @@ static void test_block_commands_parse(void** state) {
     block_header_t header;
     int offset = 0;
     offset = parse_block_header(&buffer, &header);
-    buffer.offset = offset;  // Offset should be at the begining of a command
+    buffer.offset = offset;  // Offset should be at the beginning of a command
 
     // Parse the command
     expected_seed_command_t seed_expectations = {

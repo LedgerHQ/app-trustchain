@@ -114,13 +114,13 @@ class Device:
         return response.data
         #Need to fix outputTrustedParam parameter
 
-    def parse_signature(transport:BackendInterface, siganture):
+    def parse_signature(transport:BackendInterface, signature):
         # Convert header to bytes
-        siganture_bytes = bytes(siganture)
+        signature_bytes = bytes(signature)
         
         # Call the transport.send() function to parse the block header
 
-        response = transport.exchange(Device.CLA, Device.INS_PARSE_STREAM, Device.ParseStreamMode.Signature, Device.OutputDataMode.none, siganture_bytes)
+        response = transport.exchange(Device.CLA, Device.INS_PARSE_STREAM, Device.ParseStreamMode.Signature, Device.OutputDataMode.none, signature_bytes)
         return response.data
     
     def initFlow(transport:BackendInterface, sessionKey): 

@@ -31,7 +31,7 @@ typedef struct {
 } stream_trusted_member_t;
 
 typedef struct {
-    // Informations about the state of the stream
+    // Information about the state of the stream
     uint8_t topic[MAX_TOPIC_LEN];                     // Topic of the chain
     uint8_t topic_len;                                // Length of the topic
     uint8_t last_block_hash[HASH_LEN];                // Hash of the last block of the chain
@@ -45,7 +45,7 @@ typedef struct {
     // Last recorded trusted member
     stream_trusted_member_t trusted_member;
 
-    // Informations about the current block being parsed
+    // Information about the current block being parsed
     uint8_t current_block_issuer[MEMBER_KEY_LEN];  // Issuer of the current block
     uint8_t current_block_length;                  // Number of instruction in the current block
     uint8_t parsed_command_count;                  // Number of command parsed in the current block

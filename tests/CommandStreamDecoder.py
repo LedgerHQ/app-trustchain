@@ -38,7 +38,7 @@ class TLV:
             result.append(tlv['tlv'])
 
         return result
-        #Returns final list of results where each element of the list is dictionnary in TLV form with a type and value
+        #Returns final list of results where each element of the list is dictionary in TLV form with a type and value
     
     @staticmethod
     def readVarInt(read):

@@ -72,7 +72,10 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
 
     // Generate private key
     ret = crypto_generate_pair(&public_key, &private_key);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        return ret;
+    }
 
     // Generate chain code
     cx_trng_get_random_data(xpriv + 32, 32);
@@ -81,7 +84,10 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     ret = crypto_ephemeral_ecdh(G_context.stream.device_public_key,
                                 command->command.seed.ephemeral_public_key,
                                 secret);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        return ret;
+    }
 
     // Generate IV
     cx_trng_get_random_data(command->command.seed.initialization_vector,
@@ -90,6 +96,7 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     // Write private key in xpriv buffer
     memcpy(xpriv, private_key.d, sizeof(private_key.d));
 
+    explicit_bzero(&private_key, sizeof(private_key));
     // Encrypt xpriv
     DEBUG_LOG_BUF("XPRIV (SEED): ", xpriv, sizeof(xpriv));
     ret = crypto_encrypt(secret,
@@ -100,7 +107,11 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
                          command->command.seed.encrypted_xpriv,
                          sizeof(command->command.seed.encrypted_xpriv),
                          false);
-    if (ret < 0) return ret;
+    if (ret < 0) {
+        signer_reset();
+        explicit_bzero(&xpriv, sizeof(xpriv));
+        return ret;
+    }
     command->command.seed.encrypted_xpriv_size = sizeof(command->command.seed.encrypted_xpriv);
 
     // Compress and save group key
@@ -112,29 +123,45 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     buffer.size = sizeof(command->command.seed.encrypted_xpriv);
     buffer.offset = 0;
     ret = io_push_trusted_property(TP_XPRIV, &buffer);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        explicit_bzero(&xpriv, sizeof(xpriv));
+        return ret;
+    }
+
     // - push ephemeral public key
     buffer.ptr = command->command.seed.ephemeral_public_key;
     buffer.size = sizeof(command->command.seed.ephemeral_public_key);
     buffer.offset = 0;
     ret = io_push_trusted_property(TP_EPHEMERAL_PUBLIC_KEY, &buffer);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        explicit_bzero(&xpriv, sizeof(xpriv));
+        return ret;
+    }
 
     // - push initialization vector
     buffer.ptr = command->command.seed.initialization_vector;
     buffer.size = sizeof(command->command.seed.initialization_vector);
     buffer.offset = 0;
     ret = io_push_trusted_property(TP_COMMAND_IV, &buffer);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        explicit_bzero(&xpriv, sizeof(xpriv));
+        return ret;
+    }
 
     // - push group key
     buffer.ptr = command->command.seed.group_public_key;
     buffer.size = sizeof(command->command.seed.group_public_key);
     buffer.offset = 0;
     ret = io_push_trusted_property(TP_GROUPKEY, &buffer);
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        signer_reset();
+        explicit_bzero(&xpriv, sizeof(xpriv));
+        return ret;
+    }
 
-    explicit_bzero(&private_key, sizeof(private_key));
 
     // User approval
     // TODO implement user approval
@@ -142,6 +169,8 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
     // Set the shared secret in the stream
     memcpy(G_context.stream.shared_secret, xpriv, sizeof(xpriv));
     G_context.stream.shared_secret_len = sizeof(xpriv);
+
+    explicit_bzero(&xpriv, sizeof(xpriv));
 
     return ret < 0 ? ret : 0;
 }

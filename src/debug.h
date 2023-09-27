@@ -1,9 +1,10 @@
 #pragma once
 
-#define ENABLE_DEBUG
-#define ENABLE_APDU_LOG
+//#define ENABLE_DEBUG
+//#define ENABLE_APDU_LOG
 
 #ifdef ENABLE_DEBUG
+#error 11
 #include <stdint.h>
 
 #define DEBUG_PRINT_BUF(buf, len) debug_write_hex(buf, len);

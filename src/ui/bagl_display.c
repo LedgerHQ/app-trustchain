@@ -67,7 +67,8 @@ UX_FLOW(ux_display_member_confirmed_flow,
         
 
 // Step with icon and text
-UX_STEP_NOCB(ux_display_confirm_member_step, pn, {&C_icon_eye, "Confirm member"});
+UX_STEP_NOCB(ux_display_confirm_member_step, pnn, {NULL, "Activate Wallet sync", NULL});
+
 // Step with approve button
 UX_STEP_CB(ux_display_approve_step,
            pb,
@@ -111,7 +112,7 @@ int ui_display_add_seed(bool approve) {
     ui_menu_main();
 }
 
-UX_STEP_NOCB(ux_display_confirm_seed_step, pn, {&C_icon_eye, "Create new group"});
+UX_STEP_NOCB(ux_display_confirm_seed_step, nn, {"Create a new", "sync group"});
 
 // FLOW to display add seed:
 // #1 screen: eye icon + "Confirm Address"

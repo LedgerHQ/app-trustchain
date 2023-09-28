@@ -67,13 +67,11 @@ int apdu_dispatcher(const command_t *cmd) {
             buf.offset = 0;
             return handler_get_public_key(&buf);
         case INIT:
-            // Initialize the flow for signing a block or accessing the SeedID. The command receives an ephemeral public
-            // and generate an ephemeral private key and create a secret. The ephemeral public key
-            // will be shared to the host at the end of the flow when it is approved by
-            // the user.
-            // P1 is equal to 0x00
-            // P2 is equal to 0x00
-            // Data is equal to the 33 bytes of the ephemeral public key
+            // Initialize the flow for signing a block or accessing the SeedID. The command receives
+            // an ephemeral public and generate an ephemeral private key and create a secret. The
+            // ephemeral public key will be shared to the host at the end of the flow when it is
+            // approved by the user. P1 is equal to 0x00 P2 is equal to 0x00 Data is equal to the 33
+            // bytes of the ephemeral public key
             if (cmd->lc != 33) {
                 return io_send_sw(SW_WRONG_DATA_LENGTH);
             }
@@ -87,7 +85,7 @@ int apdu_dispatcher(const command_t *cmd) {
             // If p1 is 0, Block header is expected
             // If p1 is 1, A single command is expected
             // if p1 is 2, the last command is expected (outputs the signature)
-        
+
             if (cmd->p1 > MODE_BLOCK_FINALIZE) {
                 return io_send_sw(SW_WRONG_P1P2);
             }

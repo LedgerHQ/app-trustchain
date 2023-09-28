@@ -13,7 +13,8 @@ typedef enum {
 
 #define SIGNER_EMPTY_BLOCK 0
 
-#define IS_SESSION_INITIALIAZED() (G_context.signer_info.session_key[0] == 0x02 || G_context.signer_info.session_key[0] == 0x03)
+#define IS_SESSION_INITIALIAZED() \
+    (G_context.signer_info.session_key[0] == 0x02 || G_context.signer_info.session_key[0] == 0x03)
 
 int signer_init(signer_ctx_t *signer);
 
@@ -28,9 +29,7 @@ int signer_parse_block_header(signer_ctx_t *signer, stream_ctx_t *stream, buffer
  * Parse command and compute digest. Once parsed the command the command
  * asks for validation and output of trusted params
  */
-int signer_parse_command(signer_ctx_t *signer,
-                         stream_ctx_t *stream,
-                         buffer_t *data);
+int signer_parse_command(signer_ctx_t *signer, stream_ctx_t *stream, buffer_t *data);
 
 /**
  * Sign the block

@@ -67,17 +67,17 @@
 
 /**
  * Length of initialization vectors used for encryption
-*/
+ */
 #define IV_LEN 16
 
 /*
  * Max derivation path length
-*/
+ */
 #define MAX_DERIVATION_PATH_LEN 10
 
 /*
  * Private key length
-*/
+ */
 #define PRIVATE_KEY_LEN 32
 
 // TODO TO REMOVE instantiated in src/main.c

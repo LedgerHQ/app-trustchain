@@ -22,7 +22,9 @@ int handler_init_signature_flow(buffer_t *cdata) {
     }
     DEBUG_PRINT("SESSION PRIVATE KEY: ")
     DEBUG_PRINT_BUF(private_key.d, 32)
-    if ((ret = crypto_ecdh(&private_key, cdata->ptr + cdata->offset,  G_context.signer_info.session_encryption_key)) != 0) {
+    if ((ret = crypto_ecdh(&private_key,
+                           cdata->ptr + cdata->offset,
+                           G_context.signer_info.session_encryption_key)) != 0) {
         explicit_bzero(&private_key, sizeof(private_key));
         return io_send_sw(ret);
     }
@@ -40,7 +42,8 @@ int handler_init_signature_flow(buffer_t *cdata) {
 
     // SeedID initialization
 
-    ret = crypto_derive_private_key(&private_key, derivation_buffer, SEED_ID_PATH, SEED_ID_PATH_LEN);
+    ret =
+        crypto_derive_private_key(&private_key, derivation_buffer, SEED_ID_PATH, SEED_ID_PATH_LEN);
     if (ret != 0) {
         explicit_bzero(&private_key, sizeof(private_key));
         return io_send_sw(SW_BAD_STATE);

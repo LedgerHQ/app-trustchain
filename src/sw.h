@@ -80,9 +80,9 @@
 
 /**
  * Status for fail when the stream is closed
-*/
+ */
 #define SW_STREAM_CLOSED 0xB00C
 
 /**
  * Status for fail when the stream is closed
-*/
+ */

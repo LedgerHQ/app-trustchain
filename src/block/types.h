@@ -38,26 +38,25 @@ typedef enum {
     OWNER = (int) 0xFFFFFFFF,
 } member_permission_t;
 
-
 typedef struct {
-    uint8_t     topic[MAX_TOPIC_LEN];
-    uint8_t     topic_len;
-    uint16_t    protocol_version;
-    uint8_t     group_public_key[MEMBER_KEY_LEN];
-    uint8_t     initialization_vector[IV_LEN];
-    uint8_t     encrypted_xpriv_size;
-    uint8_t     encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
-    uint8_t     ephemeral_public_key[MEMBER_KEY_LEN];
+    uint8_t topic[MAX_TOPIC_LEN];
+    uint8_t topic_len;
+    uint16_t protocol_version;
+    uint8_t group_public_key[MEMBER_KEY_LEN];
+    uint8_t initialization_vector[IV_LEN];
+    uint8_t encrypted_xpriv_size;
+    uint8_t encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
+    uint8_t ephemeral_public_key[MEMBER_KEY_LEN];
 } block_command_seed_t;
 
 typedef struct {
-    uint32_t    path[MAX_DERIVATION_PATH_LEN];
-    uint8_t     path_len;
-    uint8_t     group_public_key[MEMBER_KEY_LEN];
-    uint8_t     initialization_vector[IV_LEN];
-    uint8_t     encrypted_xpriv_size;
-    uint8_t     encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
-    uint8_t     ephemeral_public_key[MEMBER_KEY_LEN];
+    uint32_t path[MAX_DERIVATION_PATH_LEN];
+    uint8_t path_len;
+    uint8_t group_public_key[MEMBER_KEY_LEN];
+    uint8_t initialization_vector[IV_LEN];
+    uint8_t encrypted_xpriv_size;
+    uint8_t encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
+    uint8_t ephemeral_public_key[MEMBER_KEY_LEN];
 } block_command_derive_t;
 
 typedef struct {
@@ -67,11 +66,11 @@ typedef struct {
 } block_command_add_member_t;
 
 typedef struct {
-    uint8_t     initialization_vector[IV_LEN];
-    uint8_t     encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
-    uint8_t     encrypted_xpriv_size;
-    uint8_t     recipient[MEMBER_KEY_LEN];
-    uint8_t     ephemeral_public_key[MEMBER_KEY_LEN];
+    uint8_t initialization_vector[IV_LEN];
+    uint8_t encrypted_xpriv[MAX_ENCRYPTED_KEY_LEN];
+    uint8_t encrypted_xpriv_size;
+    uint8_t recipient[MEMBER_KEY_LEN];
+    uint8_t ephemeral_public_key[MEMBER_KEY_LEN];
 } block_command_publish_key_t;
 
 typedef struct {
@@ -92,8 +91,8 @@ typedef struct {
     uint8_t signature_len;               /// length of transaction signature
     uint8_t v;                           /// parity of y-coordinate of R in ECDSA signature
 
-    uint8_t command_count;               // Number of commands in the block to sign
-    uint8_t parsed_command;              // Number of commands parsed
+    uint8_t command_count;   // Number of commands in the block to sign
+    uint8_t parsed_command;  // Number of commands parsed
 
     uint8_t session_key[MEMBER_KEY_LEN];  // Session key (ephemeral public key)
     uint8_t session_encryption_key[SESSION_ENCRYPTION_KEY_LEN];

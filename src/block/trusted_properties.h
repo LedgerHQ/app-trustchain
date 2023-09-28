@@ -23,30 +23,32 @@ typedef enum {
 #include "../constants.h"
 
 #define TP_CHECKSUM_LEN 4
-#define TP_NONCE_SIZE 4
-#define TP_BUFFER_SIZE_NEW_MEMBER (TP_NONCE_SIZE + sizeof(stream_trusted_member_t) + TP_CHECKSUM_LEN)
+#define TP_NONCE_SIZE   4
+#define TP_BUFFER_SIZE_NEW_MEMBER \
+    (TP_NONCE_SIZE + sizeof(stream_trusted_member_t) + TP_CHECKSUM_LEN)
 
 int serialize_trusted_member(stream_trusted_member_t *member, uint8_t *buffer, size_t buffer_size);
 int deserialize_trusted_member(uint8_t *buffer, size_t buffer_size, stream_trusted_member_t *out);
 
 /**
  * Set the trusted member in global context and serialize it in the given buffer
- * 
+ *
  * @param[in] member The trusted member to set
- * @param[out] buffer The buffer to serialize the trusted member in (NULL to only set the global context)
+ * @param[out] buffer The buffer to serialize the trusted member in (NULL to only set the global
+ * context)
  * @param[in] buffer_size The size of the buffer
- * 
+ *
  * @return The length of the serialized trusted member or an error code
-*/
+ */
 int set_trusted_member(stream_trusted_member_t *member, uint8_t *buffer, size_t buffer_size);
 
 /**
  * Read the trusted member from the given buffer and set it in global context.
- * 
+ *
  * @param[in] buffer The buffer to read the trusted member from
  * @param[in] buffer_size The size of the buffer
  * @param[out] out The trusted member to set (NULL to only set the global context)
- * 
+ *
  * @return The length of the serialized trusted member or an error code
-*/
+ */
 int read_and_set_trusted_member(uint8_t *buffer, size_t buffer_size, stream_trusted_member_t *out);

@@ -17,12 +17,12 @@
  * Enumeration with expected INS of APDU commands.
  */
 typedef enum {
-    GET_VERSION = 0x03,     /// version of the application
-    GET_APP_NAME = 0x04,    /// name of the application
-    GET_SEED_ID = 0x05,     /// get public key NOT IMPLEMENTED
-    INIT = 0x06,            /// Initialize secure flows (block signature, GET SeedID, AUTHENTICATE w/ SeedID)
-    SIGN_BLOCK = 0x07,      /// sign block of a parsed stream
-    PARSE_STREAM = 0x08,    /// parse a stream
+    GET_VERSION = 0x03,   /// version of the application
+    GET_APP_NAME = 0x04,  /// name of the application
+    GET_SEED_ID = 0x05,   /// get public key NOT IMPLEMENTED
+    INIT = 0x06,  /// Initialize secure flows (block signature, GET SeedID, AUTHENTICATE w/ SeedID)
+    SIGN_BLOCK = 0x07,          /// sign block of a parsed stream
+    PARSE_STREAM = 0x08,        /// parse a stream
     SET_TRUSTED_MEMBER = 0x09,  /// set a trusted member for upcoming commands
 } command_e;
 
@@ -61,13 +61,12 @@ typedef struct {
 typedef struct {
     state_e state;  /// state of the context
     union {
-        pubkey_ctx_t pk_info;       /// public key context
-        signer_ctx_t signer_info;   /// signer context
+        pubkey_ctx_t pk_info;      /// public key context
+        signer_ctx_t signer_info;  /// signer context
     };
     request_type_e req_type;              /// user request
     uint32_t bip32_path[MAX_BIP32_PATH];  /// BIP32 path
     uint8_t bip32_path_len;               /// length of BIP32 path
 
     stream_ctx_t stream;  /// Stream context
-
 } global_ctx_t;

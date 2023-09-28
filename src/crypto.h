@@ -17,25 +17,21 @@ typedef cx_ecfp_public_key_t crypto_public_key_t;
 #endif
 
 #define C_IV_LEN 16
-#define C_ERROR -1
-#define C_OK CX_OK
+#define C_ERROR  -1
+#define C_OK     CX_OK
 
 /**
  * Generate a new key pair.
- *
  * @param[out] public_key
  *   Pointer to public key.
  * @param[out] private_key
  *   Pointer to private key.
- *
  * @return 0 on success, error number otherwise.
- *
  */
 int crypto_generate_pair(crypto_public_key_t *public_key, crypto_private_key_t *private_key);
 
 /**
  * Derive private key given BIP32 path.
- *
  * @param[out] private_key
  *   Pointer to private key.
  * @param[out] chain_code
@@ -44,41 +40,36 @@ int crypto_generate_pair(crypto_public_key_t *public_key, crypto_private_key_t *
  *   Pointer to buffer with BIP32 path.
  * @param[in]  bip32_path_len
  *   Number of path in BIP32 path.
- *
  * @return 0 on success, error number otherwise.
- *
  */
 int crypto_derive_private_key(crypto_private_key_t *private_key,
                               uint8_t chain_code[static 32],
                               const uint32_t *bip32_path,
                               uint8_t bip32_path_len);
 
-
 /**
  * Performs HMAC-SHA512.
- * 
  * @param[in]  key The key used to compute the HMAC.
  * @param[in]  key_len The length of the key.
  * @param[in]  data The data to compute the HMAC of.
  * @param[in]  data_len The length of the data.
- * 
  * @return 0 on success, error number otherwise.
- * 
  */
-int crypto_hmac_sha512(uint8_t *key, uint32_t key_len, uint8_t *data, uint32_t data_len, uint8_t *hmac);
+int crypto_hmac_sha512(uint8_t *key,
+                       uint32_t key_len,
+                       uint8_t *data,
+                       uint32_t data_len,
+                       uint8_t *hmac);
 
 /**
  * Initialize public key given private key.
- *
  * @param[in]  private_key
  *   Pointer to private key.
  * @param[out] public_key
  *   Pointer to public key.
  * @param[out] raw_public_key
  *   Pointer to raw public key.
- *
  * @throw INVALID_PARAMETER
- *
  */
 void crypto_init_public_key(crypto_private_key_t *private_key,
                             crypto_public_key_t *public_key,
@@ -86,52 +77,48 @@ void crypto_init_public_key(crypto_private_key_t *private_key,
 
 /**
  * Initialize private key given raw private key.
- * 
  * @param[in]  raw_private_key The raw private key. MUST BE 32 BYTES LONG.
  * @param[out] private_key The private key structure to initialize.
- * 
  */
 void crypto_init_private_key(uint8_t raw_private_key[static 32], crypto_private_key_t *private_key);
 
 /**
  * Compress public key.
- * 
  * @param[in]  public_key The public key to compress. Must be 65 bytes long (with 0x04 prefix).
  * @param[out] compressed_public_key The compressed public key. Must be 33 bytes long.
- * 
  * @return 0 on success, error number otherwise.
-*/
+ */
 int crypto_compress_public_key(const uint8_t *public_key, uint8_t compressed_public_key[static 33]);
 
 /**
  * Decompress public key.
- * 
  * @param[in]  compressed_public_key The compressed public key. Must be 33 bytes long.
  * @param[out] public_key The decompressed public key. Must be 65 bytes long.
- * 
  * @return 0 on success, error number otherwise.
-*/
-int crypto_decompress_public_key(const uint8_t *compressed_public_key, uint8_t public_key[static 65]);
+ */
+int crypto_decompress_public_key(const uint8_t *compressed_public_key,
+                                 uint8_t public_key[static 65]);
 
 /**
  * Perform ECDH between a private key and a compressed public key.
-*/
+ */
 int crypto_ecdh(const crypto_private_key_t *private_key,
                 const uint8_t *compressed_public_key,
                 uint8_t *secret);
 
 /**
  * Generate ephemeral key pair and perform ECDH
- * 
  * @param[in]  recipient_public_key Compressed public key of the recipient.
- * @param[out] ephemeral_public_key The ephemeral public key used to compute the shared secret. The buffer must be at least 33 bytes long.
+ * @param[out] ephemeral_public_key The ephemeral public key used to compute the shared secret. The
+ * buffer must be at least 33 bytes long.
  * @param[out] secret The shared secret. The buffer must be at least 32 bytes long.
-*/
-int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *ephemeral_public_key, uint8_t *secret);
+ */
+int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key,
+                          uint8_t *ephemeral_public_key,
+                          uint8_t *secret);
 
 /**
  * Performs an ephemeral ECDH and decrypts the given data.
- * 
  * @param[in]  private_key The private key of the recipient.
  * @param[in]  sender_public_key The public key of the sender.
  * @param[in]  data The data to decrypt.
@@ -139,17 +126,18 @@ int crypto_ephemeral_ecdh(const uint8_t *recipient_public_key, uint8_t *ephemera
  * @param[in]  initialization_vector The initialization vector used to encrypt the data.
  * @param[out] decrypted_data The decrypted data. The buffer must be at least data_len bytes long.
  * @param[in]  decrypted_data_len The length of the decrypted data buffer.
- * 
  * @return The length of the decrypted data on success, a negative number in case of error.
-*/
-int crypto_ecdhe_decrypt(const crypto_private_key_t *private_key, const uint8_t *sender_public_key, 
-                         const uint8_t *data, uint32_t data_len, uint8_t *initialization_vector,
-                         uint8_t *decrypted_data, uint32_t decrypted_data_len);
-
+ */
+int crypto_ecdhe_decrypt(const crypto_private_key_t *private_key,
+                         const uint8_t *sender_public_key,
+                         const uint8_t *data,
+                         uint32_t data_len,
+                         uint8_t *initialization_vector,
+                         uint8_t *decrypted_data,
+                         uint32_t decrypted_data_len);
 
 /**
  * Encrypt data with the given secret and IV
- * 
  * @param[in]  secret The secret used to encrypt the data.
  * @param[in]  secret_len The length of the secret.
  * @param[in]  data The data to encrypt.
@@ -157,16 +145,19 @@ int crypto_ecdhe_decrypt(const crypto_private_key_t *private_key, const uint8_t 
  * @param[in]  initialization_vector The initialization vector used to encrypt the data.
  * @param[out] encrypted_data The encrypted data. The buffer must be at least data_len bytes long.
  * @param[in]  encrypted_data_len The length of the encrypted data buffer.
- * 
  * @return The length of the encrypted data on success, a negative number in case of error.
-*/
-int crypto_encrypt(const uint8_t *secret, uint32_t secret_len, 
-                   const uint8_t *data, uint32_t data_len, 
-                   uint8_t *initialization_vector, uint8_t *encrypted_data, uint32_t encrypted_data_len, bool padding);
+ */
+int crypto_encrypt(const uint8_t *secret,
+                   uint32_t secret_len,
+                   const uint8_t *data,
+                   uint32_t data_len,
+                   uint8_t *initialization_vector,
+                   uint8_t *encrypted_data,
+                   uint32_t encrypted_data_len,
+                   bool padding);
 
 /**
  * Decrypt data with the given secret and IV
- * 
  * @param[in]  secret The secret used to decrypt the data.
  * @param[in]  secret_len The length of the secret.
  * @param[in]  data The data to decrypt.
@@ -174,106 +165,93 @@ int crypto_encrypt(const uint8_t *secret, uint32_t secret_len,
  * @param[in]  initialization_vector The initialization vector used to decrypt the data.
  * @param[out] decrypted_data The decrypted data. The buffer must be at least data_len bytes long.
  * @param[in]  decrypted_data_len The length of the decrypted data buffer.
- * 
  * @return The length of the decrypted data on success, a negative number in case of error.
-*/
-int crypto_decrypt(const uint8_t *secret, uint32_t secret_len, 
-                   const uint8_t *data, uint32_t data_len, 
-                   uint8_t *initialization_vector, uint8_t *decrypted_data, uint32_t decrypted_data_len, bool padding);
+ */
+int crypto_decrypt(const uint8_t *secret,
+                   uint32_t secret_len,
+                   const uint8_t *data,
+                   uint32_t data_len,
+                   uint8_t *initialization_vector,
+                   uint8_t *decrypted_data,
+                   uint32_t decrypted_data_len,
+                   bool padding);
 
 /**
  * Sign block hash in global context.
- *
  * @see G_context.bip32_path, G_context.block_hash,
  * G_context.block_signature.
- *
  * @return 0 on success, error number otherwise.
- *
  */
 int crypto_sign_block(void);
 
 /**
  * Verify signature of a message hash.
- * 
  * @param[in] public_key The public key used to verify the signature.
  * @param[in] message_hash The message hash to verify.
  * @param[in] signature The signature to verify.
  * @param[in] signature_len The length of the signature.
- * 
  * @return 1 on success, 0 if the signature doesn't match, error number otherwise.
-*/
+ */
 int crypto_verify_signature(const uint8_t *public_key,
                             crypto_hash_t *message_hash,
-                            uint8_t *signature, size_t signature_len);
-
+                            uint8_t *signature,
+                            size_t signature_len);
 
 /**
  * Initialize the hash structure.
- * 
  * @param[out] hash The hash structure to initialize.
- * 
  * @return CX_OK on success, error code otherwise.
-*/
+ */
 int crypto_digest_init(crypto_hash_t *hash);
 
 /**
  * Update the hash with the given data.
- * 
  * @param[in] hash The hash structure to update.
  * @param[in] data The data to hash.
  * @param[in] len The length of the data.
- * 
  * @return CX_OK on success, error code otherwise.
-*/
+ */
 int crypto_digest_update(crypto_hash_t *hash, const uint8_t *data, uint32_t len);
 
 /**
  * Finalize the hash and store the digest in the given buffer.
- * 
  * @param[in]  hash The hash structure to finalize.
  * @param[out] digest The buffer to store the digest in.
  * @param[in]  len The length of the digest buffer.
- * 
  * @return CX_OK on success, error code otherwise.
-*/
+ */
 int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len);
 
 /**
  * Compute the digest of the given data (single shot flavour).
- * 
  * @param[in]  data The data to hash.
  * @param[in]  len The length of the data.
  * @param[out] digest The buffer to store the digest in.
  * @param[in]  digest_len The length of the digest buffer.
- * 
  * @return CX_OK on success, error code otherwise.
-*/
+ */
 int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len);
 
 /**
  * Computes (a + b) % curve_order.
- * 
  * @param[in]  a The first number to add. Must be 32 bytes long.
  * @param[in]  b The second number to add. Must be 32 bytes long.
  * @param[out] out The buffer to store the result in. Must be 32 bytes long.
- * 
  * @return 0 on success, error code otherwise.
-*/
+ */
 int crypto_ec_add_mod_n(const uint8_t *a, const uint8_t *b, uint8_t *out);
 
 /**
  * Check if the given private key is valid.
- * 
  * @param[in] private_key The private key to check. Must be 32 bytes long.
- * 
  * @return true if the private key is valid, false otherwise.
-*/
+ */
 bool crypto_ec_is_point_on_curve(const uint8_t *private_key);
 
 /**
  * Generate a random private/public key pair.
- * 
  * @param[out] private_key The buffer to store the private key in. Must be 32 bytes long.
  * @param[out] public_key The buffer to store the public key in. Must be 65 bytes long.
-*/
-int crypto_generate_random_keypair(crypto_private_key_t *private_key, crypto_public_key_t *public_key);
+ */
+int crypto_generate_random_keypair(crypto_private_key_t *private_key,
+                                   crypto_public_key_t *public_key);

@@ -35,32 +35,37 @@ bool bip32_path_is_hardened(const uint32_t *bip32_path, size_t bip32_path_len) {
     return true;
 }
 
-int bip32_derive_xpriv(uint8_t *parent_private_key, uint8_t *parent_chain_code, uint32_t index,
-                       uint8_t *child_private_key, uint8_t *child_chain_code) {
-    /*
-        kpar: 32 bytes, parent private key
-        cpar: 32 bytes, parent chain code
-        point(p): returns the coordinate pair resulting from EC point multiplication (repeated application of the EC group operation) of the secp256k1 base point with the integer p.
-        ser32(i): serialize a 32-bit unsigned integer i as a 4-byte sequence, most significant byte first.
-        ser256(p): serializes the integer p as a 32-byte sequence, most significant byte first.
-        serP(P): serializes the coordinate pair P = (x,y) as a byte sequence using SEC1's compressed form: (0x02 or 0x03) || ser256(x), where the header byte depends on the parity of the omitted y coordinate.
-        parse256(p): interprets a 32-byte sequence as a 256-bit number, most significant byte first.
+int bip32_derive_xpriv(uint8_t *parent_private_key,
+                       uint8_t *parent_chain_code,
+                       uint32_t index,
+                       uint8_t *child_private_key,
+                       uint8_t *child_chain_code) {
+    // kpar: 32 bytes, parent private key
+    // cpar: 32 bytes, parent chain code
+    // point(p): returns the coordinate pair resulting from EC point multiplication (repeated
+    // application of the EC group operation) of the secp256k1 base point with the integer p.
+    // ser32(i): serialize a 32-bit unsigned integer i as a 4-byte sequence, most significant byte
+    // first. ser256(p): serializes the integer p as a 32-byte sequence, most significant byte
+    // first. serP(P): serializes the coordinate pair P = (x,y) as a byte sequence using SEC1's
+    // compressed form: (0x02 or 0x03) || ser256(x), where the header byte depends on the parity of
+    // the omitted y coordinate. parse256(p): interprets a 32-byte sequence as a 256-bit number,
+    // most significant byte first.
 
-        # Algorithm:
-        - Check whether i ≥ 2^31 (whether the child is a hardened key).
-            - If so (hardened child): let I = HMAC-SHA512(Key = cpar, Data = 0x00 || ser256(kpar) || ser32(i)). 
-                (Note: The 0x00 pads the private key to make it 33 bytes long.)
-            - If not (normal child): let I = HMAC-SHA512(Key = cpar, Data = serP(point(kpar)) || ser32(i)).
-        - Split I into two 32-byte sequences, IL and IR.
-        - The returned child key ki is parse256(IL) + kpar (mod n).
-        - The returned chain code ci is IR.
-        - In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid, and one should proceed with the next value for i. 
-            (Note: this has probability lower than 1 in 2^127)
-    */
+    // # Algorithm:
+    // - Check whether i ≥ 2^31 (whether the child is a hardened key).
+    // - If so (hardened child): let I = HMAC-SHA512(Key = cpar, Data = 0x00 || ser256(kpar) ||
+    // ser32(i)). (Note: The 0x00 pads the private key to make it 33 bytes long.)
+    // - If not (normal child): let I = HMAC-SHA512(Key = cpar, Data = serP(point(kpar)) ||
+    // ser32(i)).
+    // - Split I into two 32-byte sequences, IL and IR.
+    // - The returned child key ki is parse256(IL) + kpar (mod n).
+    // - The returned chain code ci is IR.
+    // - In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid, and one should proceed
+    // with the next value for i. (Note: this has probability lower than 1 in 2^127)
     int ret = 0;
     uint8_t I[64];
     union {
-        uint8_t hard[37];   // 0x00 || ser256(kpar) || ser32(i)
+        uint8_t hard[37];  // 0x00 || ser256(kpar) || ser32(i)
         struct {
             uint8_t compressed_public_key[33 + 4];
             crypto_public_key_t public_key;
@@ -80,7 +85,9 @@ iteration:
         }
     } else {
         crypto_init_private_key(parent_private_key, &data.soft.private_key);
-        crypto_init_public_key(&data.soft.private_key, &data.soft.public_key, data.soft.raw_public_key + 1);
+        crypto_init_public_key(&data.soft.private_key,
+                               &data.soft.public_key,
+                               data.soft.raw_public_key + 1);
         data.soft.raw_public_key[0] = 0x04;
         ret = crypto_compress_public_key(data.soft.raw_public_key, data.soft.compressed_public_key);
         if (ret != 0) {
@@ -105,8 +112,12 @@ iteration:
     return ret;
 }
 
-int bip32_derive_xpriv_to_path(uint8_t *parent_private_key, uint8_t *parent_chain_code, uint32_t *path, size_t path_len,
-                               uint8_t *child_private_key, uint8_t *child_chain_code) {
+int bip32_derive_xpriv_to_path(uint8_t *parent_private_key,
+                               uint8_t *parent_chain_code,
+                               uint32_t *path,
+                               size_t path_len,
+                               uint8_t *child_private_key,
+                               uint8_t *child_chain_code) {
     int ret = 0;
     uint8_t kpar[32];
     uint8_t cpar[32];

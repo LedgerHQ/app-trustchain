@@ -39,14 +39,15 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     }
     DEBUG_PRINT("PARSE BLOCK HEADER 3\n")
     // If the stream is created, expect the parent hash to be equal to context parent hash
-    if (ctx->is_created && memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
+    if (ctx->is_created &&
+        memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
     DEBUG_PRINT("PARSE BLOCK HEADER 4\n")
     DEBUG_LOG_BUF("BLOCK ISSUER: ", header.issuer, MEMBER_KEY_LEN);
     DEBUG_LOG_BUF("DEVICE KEY: ", ctx->device_public_key, MEMBER_KEY_LEN);
     // If the stream is created we expect the issuer of the block to be a trusted member
-    if (ctx->is_created && 
+    if (ctx->is_created &&
         memcmp(header.issuer, ctx->trusted_member.member_key, sizeof(header.issuer)) != 0 &&
         memcmp(header.issuer, ctx->device_public_key, sizeof(header.issuer)) != 0) {
         return SP_ERR_INVALID_STREAM;
@@ -58,7 +59,7 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     ctx->parsed_command_count = 0;
 
     // Digest block header
-    err  = block_hash_header(&header, &ctx->digest);
+    err = block_hash_header(&header, &ctx->digest);
     block_hash_header(&header, &ctx->full_block_digest);
     if (err != 0) {
         return SP_ERR_FAILED_TO_DIGEST;
@@ -74,7 +75,10 @@ int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     return SP_OK;
 }
 
-inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_seed_command(stream_ctx_t *ctx,
+                                            block_command_t *command,
+                                            uint8_t *trusted_data,
+                                            size_t trusted_data_len) {
     int ret = CX_OK;
     cx_ecfp_private_key_t private_key = {0};
     uint8_t chain_code[32] = {0};
@@ -92,11 +96,13 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *
             return ret;
         }
         // Decrypt the seed
-        ctx->shared_secret_len = crypto_ecdhe_decrypt(
-            &private_key, command->command.seed.ephemeral_public_key, command->command.seed.encrypted_xpriv,
-            sizeof(command->command.seed.encrypted_xpriv), command->command.seed.initialization_vector, 
-            ctx->shared_secret, sizeof(ctx->shared_secret)
-        );
+        ctx->shared_secret_len = crypto_ecdhe_decrypt(&private_key,
+                                                      command->command.seed.ephemeral_public_key,
+                                                      command->command.seed.encrypted_xpriv,
+                                                      sizeof(command->command.seed.encrypted_xpriv),
+                                                      command->command.seed.initialization_vector,
+                                                      ctx->shared_secret,
+                                                      sizeof(ctx->shared_secret));
         explicit_bzero(&private_key, sizeof(private_key));
         if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
             return SP_ERR_INVALID_STREAM;
@@ -115,7 +121,10 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx, block_command_t *
     return ret;
 }
 
-inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_derive_command(stream_ctx_t *ctx,
+                                              block_command_t *command,
+                                              uint8_t *trusted_data,
+                                              size_t trusted_data_len) {
     (void) trusted_data;
     (void) trusted_data_len;
     cx_ecfp_private_key_t private_key = {0};
@@ -131,16 +140,21 @@ inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t
             return ret;
         }
         // Decrypt the xpriv
-        ctx->shared_secret_len = crypto_ecdhe_decrypt(
-            &private_key, command->command.derive.ephemeral_public_key, command->command.derive.encrypted_xpriv,
-            sizeof(command->command.derive.encrypted_xpriv), command->command.derive.initialization_vector, 
-            ctx->shared_secret, sizeof(ctx->shared_secret)
-        );
+        ctx->shared_secret_len =
+            crypto_ecdhe_decrypt(&private_key,
+                                 command->command.derive.ephemeral_public_key,
+                                 command->command.derive.encrypted_xpriv,
+                                 sizeof(command->command.derive.encrypted_xpriv),
+                                 command->command.derive.initialization_vector,
+                                 ctx->shared_secret,
+                                 sizeof(ctx->shared_secret));
         explicit_bzero(&private_key, sizeof(private_key));
         if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
             return SP_ERR_INVALID_STREAM;
         }
-        DEBUG_LOG_BUF("STREAM SHARED SECRET (from derivation): ", ctx->shared_secret, ctx->shared_secret_len);
+        DEBUG_LOG_BUF("STREAM SHARED SECRET (from derivation): ",
+                      ctx->shared_secret,
+                      ctx->shared_secret_len);
         return SP_OK;
     }
 
@@ -148,9 +162,13 @@ inline static int stream_parse_derive_command(stream_ctx_t *ctx, block_command_t
     return SP_OK;
 }
 
-inline static int stream_parse_add_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_add_member_command(stream_ctx_t *ctx,
+                                                  block_command_t *command,
+                                                  uint8_t *trusted_data,
+                                                  size_t trusted_data_len) {
     // If the command was issued for the device, save the key in the stream context
-    if (memcmp(command->command.add_member.public_key, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+    if (memcmp(command->command.add_member.public_key, ctx->device_public_key, MEMBER_KEY_LEN) ==
+        0) {
         // Decrypt the key
         // TODO IMPLEMENT
         return SP_OK;
@@ -162,21 +180,30 @@ inline static int stream_parse_add_member_command(stream_ctx_t *ctx, block_comma
     return serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
 }
 
-inline static int stream_parse_publish_key_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_publish_key_command(stream_ctx_t *ctx,
+                                                   block_command_t *command,
+                                                   uint8_t *trusted_data,
+                                                   size_t trusted_data_len) {
     // Nothing to be done if the recipient is the device
-    if (memcmp(command->command.publish_key.recipient, ctx->device_public_key, MEMBER_KEY_LEN) == 0) {
+    if (memcmp(command->command.publish_key.recipient, ctx->device_public_key, MEMBER_KEY_LEN) ==
+        0) {
         return SP_OK;
     }
 
     // Update the trusted member if the member was set
-    if (memcmp(command->command.publish_key.recipient, ctx->trusted_member.member_key, MEMBER_KEY_LEN) != 0) {
-        return SP_OK; // Trusted member was not set, nothing to be done
+    if (memcmp(command->command.publish_key.recipient,
+               ctx->trusted_member.member_key,
+               MEMBER_KEY_LEN) != 0) {
+        return SP_OK;  // Trusted member was not set, nothing to be done
     }
     ctx->trusted_member.owns_key = true;
     return serialize_trusted_member(&ctx->trusted_member, trusted_data, trusted_data_len);
 }
 
-inline static int stream_parse_edit_member_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_edit_member_command(stream_ctx_t *ctx,
+                                                   block_command_t *command,
+                                                   uint8_t *trusted_data,
+                                                   size_t trusted_data_len) {
     // Update the trusted member if the member was set
     // NOT IMPLEMENTED
     (void) ctx;
@@ -186,7 +213,10 @@ inline static int stream_parse_edit_member_command(stream_ctx_t *ctx, block_comm
     return -1;
 }
 
-inline static int stream_parse_close_stream_command(stream_ctx_t *ctx, block_command_t *command, uint8_t *trusted_data, size_t trusted_data_len) {
+inline static int stream_parse_close_stream_command(stream_ctx_t *ctx,
+                                                    block_command_t *command,
+                                                    uint8_t *trusted_data,
+                                                    size_t trusted_data_len) {
     (void) command;
     (void) trusted_data;
     (void) trusted_data_len;
@@ -196,7 +226,10 @@ inline static int stream_parse_close_stream_command(stream_ctx_t *ctx, block_com
     return SP_OK;
 }
 
-int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_data, size_t trusted_data_len) {
+int stream_parse_command(stream_ctx_t *ctx,
+                         buffer_t *data,
+                         uint8_t *trusted_data,
+                         size_t trusted_data_len) {
     int err = SP_OK;
     int length = 0;
     block_command_t command;
@@ -227,13 +260,16 @@ int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_dat
             length = stream_parse_add_member_command(ctx, &command, trusted_data, trusted_data_len);
             break;
         case COMMAND_PUBLISH_KEY:
-            length = stream_parse_publish_key_command(ctx, &command, trusted_data, trusted_data_len);
+            length =
+                stream_parse_publish_key_command(ctx, &command, trusted_data, trusted_data_len);
             break;
         case COMMAND_EDIT_MEMBER:
-            length = stream_parse_edit_member_command(ctx, &command, trusted_data, trusted_data_len);
+            length =
+                stream_parse_edit_member_command(ctx, &command, trusted_data, trusted_data_len);
             break;
         case COMMAND_CLOSE_STREAM:
-            length = stream_parse_close_stream_command(ctx, &command, trusted_data, trusted_data_len);
+            length =
+                stream_parse_close_stream_command(ctx, &command, trusted_data, trusted_data_len);
             break;
         default:
             break;
@@ -252,7 +288,7 @@ int stream_parse_command(stream_ctx_t *ctx, buffer_t *data, uint8_t *trusted_dat
     if (ctx->parsed_command_count >= ctx->current_block_length) {
         ctx->parsing_state = STREAM_PARSING_STATE_SIGNATURE;
     }
-   
+
     if (length == TP_BUFFER_OVERFLOW) {
         return 0;
     }
@@ -269,10 +305,15 @@ int stream_parse_signature(stream_ctx_t *ctx, buffer_t *data) {
     if (signature_len < 0) {
         return SP_ERR_INVALID_STREAM;
     }
-    if (crypto_verify_signature(ctx->current_block_issuer, &ctx->digest, signature, signature_len) != 1) {
+    if (crypto_verify_signature(ctx->current_block_issuer,
+                                &ctx->digest,
+                                signature,
+                                signature_len) != 1) {
         return SP_ERR_INVALID_STREAM;
     }
     block_hash_signature(signature, signature_len, &ctx->full_block_digest);
-    crypto_digest_finalize(&ctx->full_block_digest, ctx->last_block_hash, sizeof(ctx->last_block_hash));
+    crypto_digest_finalize(&ctx->full_block_digest,
+                           ctx->last_block_hash,
+                           sizeof(ctx->last_block_hash));
     return 0;
 }

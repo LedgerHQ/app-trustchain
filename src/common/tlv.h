@@ -39,7 +39,7 @@ typedef enum {
 
 /**
  * Read next TLV from buffer.
-*/
+ */
 bool tlv_read_next(buffer_t *buffer, tlv_t *tlv);
 
 bool tlv_read_varint_u8(tlv_t *tlv, uint8_t *out);

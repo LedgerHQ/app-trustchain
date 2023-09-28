@@ -6,7 +6,6 @@
 #include "os.h"
 #include "cx.h"
 
-
 #include "../sw.h"
 #include "../globals.h"
 #include "../crypto.h"
@@ -28,7 +27,7 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode) {
         return io_send_sw(SW_BAD_STATE);
     }
     if (mode == MODE_BLOCK_START) {
-         if (!IS_SESSION_INITIALIAZED()) {
+        if (!IS_SESSION_INITIALIAZED()) {
             signer_reset();
             return io_send_sw(SW_BAD_STATE);
         }
@@ -46,7 +45,9 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode) {
             return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
         }
         // Returns the issuer public key as trusted property
-        buffer_t buffer = {.ptr = G_context.stream.device_public_key, .size = sizeof(G_context.stream.device_public_key), .offset = 0};
+        buffer_t buffer = {.ptr = G_context.stream.device_public_key,
+                           .size = sizeof(G_context.stream.device_public_key),
+                           .offset = 0};
         io_init_trusted_property();
         io_push_trusted_property(TP_ISSUER_PUBLIC_KEY, &buffer);
         return io_send_trusted_property(SW_OK);
@@ -61,8 +62,8 @@ int handler_sign_block(buffer_t *cdata, uint8_t mode) {
             return io_send_sw(SW_BAD_STATE);
         }
         return io_send_trusted_property(SW_OK);
-    } else if (mode == MODE_BLOCK_FINALIZE) { 
-         if (!IS_SESSION_INITIALIAZED()) {
+    } else if (mode == MODE_BLOCK_FINALIZE) {
+        if (!IS_SESSION_INITIALIAZED()) {
             signer_reset();
             return io_send_sw(SW_BAD_STATE);
         }

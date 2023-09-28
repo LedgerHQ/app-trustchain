@@ -45,28 +45,32 @@ static int parse_seed_command(buffer_t *data, block_command_t *out) {
     tlv_read_bytes(&tlv, out->command.seed.topic, MAX_TOPIC_LEN);
 
     // Read protocol version
-    
-    if (!tlv_read_next(data, &tlv) || !tlv_read_varint_u16(&tlv, &out->command.seed.protocol_version)) {
+
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_varint_u16(&tlv, &out->command.seed.protocol_version)) {
         return BP_UNEXPECTED_TLV;
     }
-    
+
     // Read group public key
     if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.seed.group_public_key)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read IV
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.seed.initialization_vector, IV_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.seed.initialization_vector, IV_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read encrypted xpriv
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.seed.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.seed.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read ephemeral public key
-    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.seed.ephemeral_public_key))
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_pubkey(&tlv, out->command.seed.ephemeral_public_key))
         return BP_UNEXPECTED_TLV;
 
     return 0;
@@ -107,23 +111,26 @@ static int parse_publish_key_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
 
     // Read IV
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.publish_key.initialization_vector, IV_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.publish_key.initialization_vector, IV_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read encrypted xpriv
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.publish_key.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.publish_key.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
     out->command.publish_key.encrypted_xpriv_size = tlv.length;
 
     // Read recipient
-    if (!tlv_read_next(data, &tlv) ||!tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {
+    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.publish_key.recipient)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read ephemeral public key
-    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.publish_key.ephemeral_public_key)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_pubkey(&tlv, out->command.publish_key.ephemeral_public_key)) {
         return BP_UNEXPECTED_TLV;
     }
 
@@ -154,7 +161,10 @@ static int parse_derive_command(buffer_t *data, block_command_t *out) {
     tlv_t tlv;
 
     // Read path
-    if (!tlv_read_next(data, &tlv) || tlv_read_derivation_path(&tlv, out->command.derive.path, sizeof(out->command.derive.path)) != 0) {
+    if (!tlv_read_next(data, &tlv) ||
+        tlv_read_derivation_path(&tlv,
+                                 out->command.derive.path,
+                                 sizeof(out->command.derive.path)) != 0) {
         return BP_UNEXPECTED_TLV;
     }
     out->command.derive.path_len = tlv.length / sizeof(uint32_t);
@@ -163,22 +173,26 @@ static int parse_derive_command(buffer_t *data, block_command_t *out) {
     }
 
     // Read group key
-    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.derive.group_public_key)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_pubkey(&tlv, out->command.derive.group_public_key)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read IV
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.derive.initialization_vector, IV_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.derive.initialization_vector, IV_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read encrypted xpriv
-    if (!tlv_read_next(data, &tlv) || !tlv_read_bytes(&tlv, out->command.derive.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_bytes(&tlv, out->command.derive.encrypted_xpriv, MAX_ENCRYPTED_KEY_LEN)) {
         return BP_UNEXPECTED_TLV;
     }
 
     // Read ephemeral public key
-    if (!tlv_read_next(data, &tlv) || !tlv_read_pubkey(&tlv, out->command.derive.ephemeral_public_key)) {
+    if (!tlv_read_next(data, &tlv) ||
+        !tlv_read_pubkey(&tlv, out->command.derive.ephemeral_public_key)) {
         return BP_UNEXPECTED_TLV;
     }
 
@@ -212,11 +226,11 @@ int parse_block_command(buffer_t *data, block_command_t *out) {
             read = parse_derive_command(&commandBuffer, out);
             break;
         case COMMAND_CLOSE_STREAM:
-            read = tlv.length; 
+            read = tlv.length;
             DEBUG_PRINT("Close stream command\n");
             break;
         default:
-        DEBUG_PRINT("Close stream command\n");
+            DEBUG_PRINT("Close stream command\n");
             return BP_ERROR_UNKNOWN_COMMAND;
             break;
     }

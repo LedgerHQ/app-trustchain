@@ -25,10 +25,11 @@ int deserialize_trusted_member(uint8_t *buffer, size_t buffer_size, stream_trust
         return TP_BUFFER_OVERFLOW;
     }
     crypto_digest(buffer, TP_NONCE_SIZE + sizeof(stream_trusted_member_t), hash, sizeof(hash));
-    if (memcmp(hash, buffer + TP_NONCE_SIZE + sizeof(stream_trusted_member_t), TP_CHECKSUM_LEN) != 0) {
+    if (memcmp(hash, buffer + TP_NONCE_SIZE + sizeof(stream_trusted_member_t), TP_CHECKSUM_LEN) !=
+        0) {
         return TP_INVALID_CHECKSUM;
     }
-    memcpy((void *)out, buffer + TP_NONCE_SIZE, sizeof(stream_trusted_member_t));
+    memcpy((void *) out, buffer + TP_NONCE_SIZE, sizeof(stream_trusted_member_t));
     return TP_SUCCESS;
 }
 

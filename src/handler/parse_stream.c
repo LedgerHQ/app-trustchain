@@ -21,8 +21,10 @@ static int handler_parse_command(buffer_t *data, parse_stream_output_mode_t outp
 
     int len = 0;
 
-    if ((len = stream_parse_command(&G_context.stream, data, output_data == OUTPUT_MODE_NONE ? NULL : trusted_param_buffer,
-                             output_data ? sizeof(trusted_param_buffer) : 0)) < 0) {
+    if ((len = stream_parse_command(&G_context.stream,
+                                    data,
+                                    output_data == OUTPUT_MODE_NONE ? NULL : trusted_param_buffer,
+                                    output_data ? sizeof(trusted_param_buffer) : 0)) < 0) {
         DEBUG_PRINT("PARSE COMMAND FAILED\n");
         return io_send_sw(SW_STREAM_PARSER_INVALID_FORMAT);
     }
@@ -79,7 +81,6 @@ int handler_parse_stream(buffer_t *cdata,
         return io_send_sw(SW_STREAM_PARSER_BAD_STATE);
     }
 
-
     // If parse_mode is set to signature and we expected something else, reset and output an error
     if (G_context.stream.parsing_state != STREAM_PARSING_STATE_SIGNATURE &&
         parse_mode == MODE_PARSE_SIGNATURE) {
@@ -89,13 +90,13 @@ int handler_parse_stream(buffer_t *cdata,
 
     // If parse_mode is set to block header and we expected a block header, parse the block header
     if (parse_mode == MODE_PARSE_BLOCK_HEADER) {
-         DEBUG_PRINT("PARSE STREAM HEADER\n");
+        DEBUG_PRINT("PARSE STREAM HEADER\n");
         return handler_parse_header(cdata);
     }
 
     // If parse_mode is set to command and we expected a command, parse the command
     if (parse_mode == MODE_PARSE_COMMAND) {
-         DEBUG_PRINT("PARSE STREAM COMMAND\n");
+        DEBUG_PRINT("PARSE STREAM COMMAND\n");
         return handler_parse_command(cdata, output_mode);
     }
 

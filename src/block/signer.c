@@ -12,6 +12,7 @@
 #include "../globals.h"
 #include "bip32.h"
 #include "../common/bip32_derivation.h"
+#include "sw.h"
 
 int signer_init(signer_ctx_t *signer) {
     crypto_digest_init(&signer->digest);
@@ -163,17 +164,28 @@ static int signer_inject_seed(signer_ctx_t *signer, block_command_t *command) {
         return ret;
     }
 
-
-    // User approval
-    // TODO implement user approval
-
     // Set the shared secret in the stream
     memcpy(G_context.stream.shared_secret, xpriv, sizeof(xpriv));
     G_context.stream.shared_secret_len = sizeof(xpriv);
 
     explicit_bzero(&xpriv, sizeof(xpriv));
 
+    // User approval
+    ui_display_add_seed_command();
+
     return ret < 0 ? ret : 0;
+}
+
+int add_seed_callback(bool confirm) {
+    if (confirm) {
+        io_send_trusted_property(SW_OK);
+    }
+    else {
+        io_send_sw(SW_DENY);
+    }
+    explicit_bzero(G_context.stream.shared_secret, G_context.stream.shared_secret_len);
+
+    return 0;
 }
 
 static int signer_inject_derive(signer_ctx_t *signer, block_command_t *command) {
@@ -425,7 +437,16 @@ int signer_parse_command(signer_ctx_t *signer, stream_ctx_t *stream, buffer_t *d
             stream->topic_len = command.command.seed.topic_len;
             memcpy(stream->topic, command.command.seed.topic, command.command.seed.topic_len);
             err = signer_inject_seed(signer, &command);
-            break;
+            if (err) {
+                signer_reset();
+                return err;
+            }
+
+            // Digest command
+            block_hash_command(&command, &signer->digest);
+
+            signer->parsed_command += 1;
+            return 0;
         case COMMAND_ADD_MEMBER:
             if (!stream->is_created) {
                 return BS_INVALID_STATE;

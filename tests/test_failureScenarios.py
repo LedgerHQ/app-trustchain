@@ -7,13 +7,16 @@ from CommandStream import CommandStream
 from NobleCrypto import Crypto
 from CommandBlock import CommandBlock, commands, sign_command_block
 from index import device
-from ApduDevice import ApduDevice,Device
+from ApduDevice import ApduDevice,Device, Automation
 from CommandStreamEncoder import CommandStreamEncoder
+from ragger.navigator import NavInsID, NavIns, Navigator
+from pathlib import Path
 
 DEFAULT_TOPIC = "c96d450545ff2836204c29af291428a5bf740304978f5dfb0b4a261474192851"
+valid_seed_instructions = [NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
 
 #Basic Signature Flow
-def test_basic_signature_flow(backend:BackendInterface): 
+def test_basic_signature_flow(backend:BackendInterface, navigator, test_name): 
     sessionKey =  Crypto.randomKeyPair()
 
     block = CommandBlock(
@@ -31,6 +34,8 @@ def test_basic_signature_flow(backend:BackendInterface):
         bytes([0] * 0)
     )
 
+    seed_automation = Automation(navigator, Path("/tmp"), f"{test_name}_seed", valid_seed_instructions)
+
     #Initialize flow
     Device.initFlow(backend, sessionKey['publicKey'])
 
@@ -39,13 +44,13 @@ def test_basic_signature_flow(backend:BackendInterface):
 
     #Commands
     #Device.parseCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
-    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
+    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0), seed_automation)
 
     #Finalize signature
     Device.finalizeSignature(backend)
 
 #We finalize twice, should fail. 
-def test_finalize_twice(backend:BackendInterface): 
+def test_finalize_twice(backend:BackendInterface, navigator, test_name): 
     sessionKey =  Crypto.randomKeyPair()
 
     block = CommandBlock(
@@ -63,6 +68,8 @@ def test_finalize_twice(backend:BackendInterface):
         bytes([0] * 0)
     )
 
+    seed_automation = Automation(navigator, Path("/tmp"), f"{test_name}_seed", valid_seed_instructions)
+
     #Initialize flow
     Device.initFlow(backend, sessionKey['publicKey'])
 
@@ -71,7 +78,7 @@ def test_finalize_twice(backend:BackendInterface):
 
     #Commands
     #Device.parseCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
-    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
+    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0), seed_automation)
 
     #Finalize signature
     Device.finalizeSignature(backend)
@@ -79,7 +86,7 @@ def test_finalize_twice(backend:BackendInterface):
     with pytest.raises(ExceptionRAPDU): 
         Device.finalizeSignature(backend)
 
-def test_sign_header_after_finalize(backend:BackendInterface): 
+def test_sign_header_after_finalize(backend:BackendInterface, navigator, test_name): 
     sessionKey =  Crypto.randomKeyPair()
 
     block = CommandBlock(
@@ -97,6 +104,8 @@ def test_sign_header_after_finalize(backend:BackendInterface):
         bytes([0] * 0)
     )
 
+    seed_automation = Automation(navigator, Path("/tmp"), f"{test_name}_seed", valid_seed_instructions)
+
     #Initialize flow
     Device.initFlow(backend, sessionKey['publicKey'])
 
@@ -105,7 +114,7 @@ def test_sign_header_after_finalize(backend:BackendInterface):
 
     #Commands
     #Device.parseCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
-    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
+    Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0), seed_automation)
 
     #Finalize signature
     Device.finalizeSignature(backend)
@@ -198,7 +207,7 @@ def test_bypass_init_header(backend:BackendInterface):
    with pytest.raises(ExceptionRAPDU): 
         Device.signBlockHeader(backend, CommandStreamEncoder.encodeBlockHeader(block))
 
-def test_bypass_one_command(backend):
+def test_bypass_one_command(backend, navigator, test_name):
    sessionKey =  Crypto.randomKeyPair()
    block = CommandBlock(
             0,  #Version
@@ -225,11 +234,13 @@ def test_bypass_one_command(backend):
             bytes([0]*0)
         )
    
+   seed_automation = Automation(navigator, Path("/tmp"), f"{test_name}_seed", valid_seed_instructions)
+
    Device.initFlow(backend, sessionKey['publicKey'])
 
    Device.signBlockHeader(backend, CommandStreamEncoder.encodeBlockHeader(block))
 
-   Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0))
+   Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block,0), seed_automation)
 
    #Device.signCommand(backend, CommandStreamEncoder.encodeCommand(block 1))
 

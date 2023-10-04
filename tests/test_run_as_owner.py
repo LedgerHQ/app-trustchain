@@ -208,7 +208,8 @@ def test_publish_key(backend):
     stream = CommandStream()
     
     #Alice creates the stream and adds Bob
-    stream = stream.edit().seed((Crypto.from_hex(DEFAULT_TOPIC))).add_member("Bob", bob_public_key,0xFFFFFFFF, True).issue(alice)
+    stream = stream.edit().seed((Crypto.from_hex(DEFAULT_TOPIC))).issue(alice)
+    stream = stream.edit().add_member("Bob", bob_public_key,0xFFFFFFFF, True).issue(alice)
 
     #Bob adds Charlie but doesn't publish key
     stream = stream.edit().add_member("Charlie", charlie_public_key, 0xFFFFFFFF, False).issue(bob)
@@ -226,7 +227,9 @@ def test_publish_key_to_non_member(backend):
     charlie_public_key = charlie.get_public_key()
 
     stream = CommandStream()
-    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
+    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).issue(alice)
+
+    stream = stream.edit().add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
 
     with pytest.raises(ExceptionRAPDU): 
             stream = stream.edit().publish_key(charlie_public_key).issue(alice)
@@ -294,7 +297,8 @@ def test_publish_key_to_non_member_by_software(backend):
     charlie_public_key = charlie.get_public_key()
 
     stream = CommandStream()
-    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
+    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).issue(alice)
+    stream = stream.edit().add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
     with pytest.raises(ValueError):
         stream = stream.edit().publish_key(charlie_public_key).issue(bob)
 
@@ -306,6 +310,7 @@ def test_add_member_twice(backend):
     bob = device.software()
     bob_public_key = bob.get_public_key()
     stream = CommandStream()
-    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
+    stream = stream.edit().seed(Crypto.from_hex(DEFAULT_TOPIC)).issue(alice)
+    stream = stream.edit().add_member("Bob", bob_public_key, 0xFFFFFFFF, True).issue(alice)
     stream = stream.edit().add_member("Bob", bob_public_key, 0xFFFFFFFF, True)
 

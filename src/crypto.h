@@ -7,6 +7,7 @@
 
 #include "os.h"
 #include "cx.h"
+#include "ledger_assert.h"
 
 typedef cx_sha256_t crypto_hash_t;
 typedef cx_ecfp_private_key_t crypto_private_key_t;
@@ -14,6 +15,7 @@ typedef cx_ecfp_public_key_t crypto_public_key_t;
 
 #else
 #include <lib/crypto.h>
+#define LEDGER_ASSERT(x) assert(x)
 #endif
 
 #define C_IV_LEN 16
@@ -200,9 +202,8 @@ int crypto_verify_signature(const uint8_t *public_key,
 /**
  * Initialize the hash structure.
  * @param[out] hash The hash structure to initialize.
- * @return CX_OK on success, error code otherwise.
  */
-int crypto_digest_init(crypto_hash_t *hash);
+void crypto_digest_init(crypto_hash_t *hash);
 
 /**
  * Update the hash with the given data.
@@ -228,9 +229,8 @@ int crypto_digest_finalize(crypto_hash_t *hash, uint8_t *digest, uint32_t len);
  * @param[in]  len The length of the data.
  * @param[out] digest The buffer to store the digest in.
  * @param[in]  digest_len The length of the digest buffer.
- * @return CX_OK on success, error code otherwise.
  */
-int crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len);
+void crypto_digest(const uint8_t *data, uint32_t len, uint8_t *digest, uint32_t digest_len);
 
 /**
  * Computes (a + b) % curve_order.

@@ -47,7 +47,7 @@ def test_seed_id(firmware, backend, navigator, test_name):
 
     with client.get_seed_id_async(challenge_data=tlv_data):
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                test_name, approve_seed_id_instructions)
+                                       test_name, approve_seed_id_instructions)
 
     response = client.seed_id_response()
     assert response.status == 0x9000

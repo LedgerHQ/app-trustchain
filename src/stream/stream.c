@@ -5,7 +5,6 @@
 #include "block_parser.h"
 #include "block_hasher.h"
 #include "../crypto.h"
-#include "../debug.h"
 #include "../block/trusted_properties.h"
 
 void stream_init(stream_ctx_t *ctx) {
@@ -15,56 +14,61 @@ void stream_init(stream_ctx_t *ctx) {
     // Initialize the hash context
     crypto_digest_init(&ctx->digest);
     crypto_digest_init(&ctx->full_block_digest);
-    DEBUG_PRINT("INIT STREAM\n")
+    PRINTF("INIT STREAM\n");
 }
 
 static int verify_block_parent_hash(stream_ctx_t *ctx, uint8_t *parent_hash) {
+    LEDGER_ASSERT(ctx != NULL, "Null ctx\n");
+    LEDGER_ASSERT(parent_hash != NULL, "Null parent_hash\n");
+
     if (!ctx->is_created) {
         return 1;
     }
+
     return memcmp(ctx->last_block_hash, parent_hash, HASH_LEN) == 0;
 }
 
 int stream_parse_block_header(stream_ctx_t *ctx, buffer_t *data) {
     block_header_t header;
     int err = 0;
-    DEBUG_PRINT("PARSE BLOCK HEADER 1\n")
+
+    LEDGER_ASSERT(ctx != NULL, "Null ctx\n");
+
+    PRINTF("PARSE BLOCK HEADER 1\n");
     if (ctx->parsing_state != STREAM_PARSING_STATE_BLOCK_HEADER) {
         return SP_ERR_INVALID_STATE;
     }
-    DEBUG_PRINT("PARSE BLOCK HEADER 2\n")
+    PRINTF("PARSE BLOCK HEADER 2\n");
     err = parse_block_header(data, &header);
     if (err < 0) {
         return SP_ERR_INVALID_STREAM;
     }
-    DEBUG_PRINT("PARSE BLOCK HEADER 3\n")
+    PRINTF("PARSE BLOCK HEADER 3\n");
     // If the stream is created, expect the parent hash to be equal to context parent hash
     if (ctx->is_created &&
         memcmp(header.parent, ctx->last_block_hash, sizeof(header.parent)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
-    DEBUG_PRINT("PARSE BLOCK HEADER 4\n")
-    DEBUG_LOG_BUF("BLOCK ISSUER: ", header.issuer, MEMBER_KEY_LEN);
-    DEBUG_LOG_BUF("DEVICE KEY: ", ctx->device_public_key, MEMBER_KEY_LEN);
+    PRINTF("PARSE BLOCK HEADER 4\n");
+    PRINTF("BLOCK ISSUER: %.*H", MEMBER_KEY_LEN, header.issuer);
+    PRINTF("DEVICE KEY: %.*H", MEMBER_KEY_LEN, ctx->device_public_key);
     // If the stream is created we expect the issuer of the block to be a trusted member
     if (ctx->is_created &&
         memcmp(header.issuer, ctx->trusted_member.member_key, sizeof(header.issuer)) != 0 &&
         memcmp(header.issuer, ctx->device_public_key, sizeof(header.issuer)) != 0) {
         return SP_ERR_INVALID_STREAM;
     }
-    DEBUG_PRINT("PARSE BLOCK HEADER 5\n")
+    PRINTF("PARSE BLOCK HEADER 5\n");
     // Update context
     memcpy(ctx->current_block_issuer, header.issuer, sizeof(header.issuer));
     ctx->current_block_length = header.length;
     ctx->parsed_command_count = 0;
 
     // Digest block header
-    err = block_hash_header(&header, &ctx->digest);
+    block_hash_header(&header, &ctx->digest);
     block_hash_header(&header, &ctx->full_block_digest);
-    if (err != 0) {
-        return SP_ERR_FAILED_TO_DIGEST;
-    }
-    DEBUG_PRINT("PARSE BLOCK HEADER 6\n")
+
+    PRINTF("PARSE BLOCK HEADER 6\n");
     // Verify if block parent is right
     if (verify_block_parent_hash(ctx, header.parent) != 1) {
         return SP_ERR_INVALID_STREAM;
@@ -83,8 +87,8 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx,
     cx_ecfp_private_key_t private_key = {0};
     uint8_t chain_code[32] = {0};
 
-    DEBUG_LOG_BUF("BLOCK ISSUER: ", ctx->current_block_issuer, MEMBER_KEY_LEN);
-    DEBUG_LOG_BUF("DEVICE KEY: ", ctx->device_public_key, MEMBER_KEY_LEN);
+    PRINTF("BLOCK ISSUER: %.*H", MEMBER_KEY_LEN, ctx->current_block_issuer);
+    PRINTF("DEVICE KEY: %.*H", MEMBER_KEY_LEN, ctx->device_public_key);
 
     // If the command was issued by the device, save the seed in the stream context
     // otherwise create and return a trusted member
@@ -107,7 +111,7 @@ inline static int stream_parse_seed_command(stream_ctx_t *ctx,
         if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
             return SP_ERR_INVALID_STREAM;
         }
-        DEBUG_LOG_BUF("STREAM SHARED SECRET: ", ctx->shared_secret, ctx->shared_secret_len);
+        PRINTF("STREAM SHARED SECRET: %.*H", ctx->shared_secret_len, ctx->shared_secret);
     } else {
         // Issue a trusted member for the issuer
         memcpy(ctx->trusted_member.member_key, ctx->current_block_issuer, MEMBER_KEY_LEN);
@@ -152,9 +156,9 @@ inline static int stream_parse_derive_command(stream_ctx_t *ctx,
         if (ctx->shared_secret_len != 2 * PRIVATE_KEY_LEN) {
             return SP_ERR_INVALID_STREAM;
         }
-        DEBUG_LOG_BUF("STREAM SHARED SECRET (from derivation): ",
-                      ctx->shared_secret,
-                      ctx->shared_secret_len);
+        PRINTF("STREAM SHARED SECRET (from derivation): %.*H",
+               ctx->shared_secret_len,
+               ctx->shared_secret);
         return SP_OK;
     }
 
@@ -300,15 +304,17 @@ int stream_parse_signature(stream_ctx_t *ctx, buffer_t *data) {
     (void) ctx;
     uint8_t signature[MAX_DER_SIG_LEN] = {0};
     int signature_len = 0;
+    uint8_t final_digest[HASH_LEN];
 
     signature_len = parse_block_signature(data, signature, sizeof(signature));
-    if (signature_len < 0) {
+    if (signature_len < 0 || signature_len > MAX_DER_SIG_LEN) {
         return SP_ERR_INVALID_STREAM;
     }
+    crypto_digest_finalize(&ctx->digest, final_digest, sizeof(final_digest));
     if (crypto_verify_signature(ctx->current_block_issuer,
-                                &ctx->digest,
+                                final_digest,
                                 signature,
-                                signature_len) != 1) {
+                                signature_len) != CX_OK) {
         return SP_ERR_INVALID_STREAM;
     }
     block_hash_signature(signature, signature_len, &ctx->full_block_digest);

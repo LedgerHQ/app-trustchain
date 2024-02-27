@@ -16,9 +16,9 @@ typedef enum {
 #define IS_SESSION_INITIALIAZED() \
     (G_context.signer_info.session_key[0] == 0x02 || G_context.signer_info.session_key[0] == 0x03)
 
-int signer_init(signer_ctx_t *signer);
+void signer_init(signer_ctx_t *signer);
 
-void signer_reset();
+void signer_reset(void);
 
 /**
  * Parse block header and start computing the digest
